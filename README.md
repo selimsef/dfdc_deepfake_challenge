@@ -23,7 +23,7 @@ In general solution is based on frame-by-frame classification approach. Other co
 #### Face-Detector
 MTCNN detector is chosen due to kernel time limits. It would be better to use S3FD detector as more precise and robust, but opensource Pytorch implementations don't have a license. 
 
-Input size for face detector was caluclated for each video depending on video resolution.
+Input size for face detector was calculated for each video depending on video resolution.
 
 - 2x scale for videos with less than 300 pixels wider side
 - no rescale for videos with wider side between 300 and 1000
