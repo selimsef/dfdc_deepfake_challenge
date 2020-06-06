@@ -1,0 +1,29 @@
+{
+    "network": "DeepFakeClassifier",
+    "encoder": "tf_efficientnet_b7_ns",
+    "batches_per_epoch": 2500,
+    "size": 380,
+    "fp16": true,
+    "optimizer": {
+        "batch_size": 12,
+        "type": "SGD",
+        "momentum": 0.9,
+        "weight_decay": 1e-4,
+        "learning_rate": 0.01,
+        "nesterov": true,
+        "schedule": {
+            "type": "poly",
+            "mode": "step",
+            "epochs": 40,
+            "params": {"max_iter":  100500}
+        }
+    },
+    "normalize": {
+        "mean": [0.485, 0.456, 0.406],
+        "std": [0.229, 0.224, 0.225]
+    },
+    "losses": {
+        "BinaryCrossentropy": 1
+    }
+}
+
