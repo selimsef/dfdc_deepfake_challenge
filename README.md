@@ -1,4 +1,4 @@
-## DeepFake Solution by @selimsef
+## DeepFake Detection (DFDC) Solution by @selimsef
 
 ## Challenge details:
 
