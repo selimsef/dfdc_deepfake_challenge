@@ -155,8 +155,12 @@ Even though SyncBN is used larger batch on each GPU will lead to less noise as D
 ## Inference
 
 
-Kernel is reproduced with `predict_folder.py` script. 
+Kernel is reproduced with `predict_folder.py` script.
 
+
+## Pretrained models  
+`download_weights.sh` script will download trained models to `weights/` folder. They should be downloaded before building a docker image.
+ 
 Ensemble inference is already preconfigured with `predict_submission.sh` bash script. It expects a directory with videos as first argument and an output csv file as second argument.
  
 For example `./predict_submission.sh /mnt/datasets/deepfake/test_videos submission.csv`  
