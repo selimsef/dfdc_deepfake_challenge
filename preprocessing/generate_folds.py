@@ -45,7 +45,7 @@ def get_paths(vid, label, root_dir):
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Extract image diffs")
+        description="Generate Folds")
     parser.add_argument("--root-dir", help="root directory", default="/mnt/sota/datasets/deepfake")
     parser.add_argument("--out", type=str, default="folds02.csv", help="CSV file to save")
     parser.add_argument("--seed", type=int, default=777, help="Seed to split, default 777")
