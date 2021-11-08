@@ -1,10 +1,9 @@
-ARG PYTORCH="1.4"
-ARG CUDA="10.1"
-ARG CUDNN="7"
+ARG PYTORCH="1.10.0"
+ARG CUDA="11.3"
+ARG CUDNN="8"
 
 FROM pytorch/pytorch:${PYTORCH}-cuda${CUDA}-cudnn${CUDNN}-devel
 
-ENV TORCH_CUDA_ARCH_LIST="6.0 6.1 7.0+PTX"
 ENV TORCH_NVCC_FLAGS="-Xfatbin -compress-all"
 ENV CMAKE_PREFIX_PATH="$(dirname $(which conda))/../"
 
@@ -13,7 +12,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Europe/Berlin
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-RUN apt-get update && apt-get install -y libglib2.0-0 libsm6 libxrender-dev libxext6 nano mc glances vim \
+RUN apt-get update && apt-get install -y libglib2.0-0 libsm6 libxrender-dev libxext6 nano mc glances vim git \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
@@ -31,36 +30,13 @@ RUN apt-get install libopenblas-dev liblapack-dev -y
 RUN apt-get install libx11-dev libgtk-3-dev -y
 RUN pip install dlib
 RUN pip install facenet-pytorch
-RUN conda install \
-              pyhamcrest \
-              cython \
-              fiona \
-              h5py \
-              jupyter \
-              jupyterlab \
-              ipykernel \
-              matplotlib \
-	          ncurses \
-              numpy \
-			  statsmodels \
-              pandas \
-              pillow \
-              pip \
-              scipy \
-              scikit-image \
-              scikit-learn \
-              testpath \
-              tqdm \
-              pandas \
-			  opencv \
-	&& conda clean -p \
-	&& conda clean -t \
-	&& conda clean --yes --all
-RUN pip install albumentations timm pytorch_toolbelt tensorboardx
+RUN pip install albumentations==1.0.0 timm==0.4.12 pytorch_toolbelt tensorboardx
+RUN pip install cython jupyter  jupyterlab ipykernel matplotlib tqdm pandas
+
 # download pretraned Imagenet models
 RUN apt install wget
-RUN wget https://github.com/rwightman/pytorch-image-models/releases/download/v0.1-weights/tf_efficientnet_b7_ns-1dbc32de.pth -P /root/.cache/torch/checkpoints/
-RUN wget https://github.com/rwightman/pytorch-image-models/releases/download/v0.1-weights/tf_efficientnet_b5_ns-6f26d0cf.pth -P /root/.cache/torch/checkpoints/
+RUN wget https://github.com/rwightman/pytorch-image-models/releases/download/v0.1-weights/tf_efficientnet_b7_ns-1dbc32de.pth -P /root/.cache/torch/hub/checkpoints/
+RUN wget https://github.com/rwightman/pytorch-image-models/releases/download/v0.1-weights/tf_efficientnet_b5_ns-6f26d0cf.pth -P /root/.cache/torch/hub/checkpoints/
 
 # Setting the working directory
 WORKDIR /workspace

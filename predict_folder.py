@@ -24,7 +24,7 @@ if __name__ == '__main__':
         print("loading state dict {}".format(path))
         checkpoint = torch.load(path, map_location="cpu")
         state_dict = checkpoint.get("state_dict", checkpoint)
-        model.load_state_dict({re.sub("^module.", "", k): v for k, v in state_dict.items()}, strict=False)
+        model.load_state_dict({re.sub("^module.", "", k): v for k, v in state_dict.items()}, strict=True)
         model.eval()
         del checkpoint
         models.append(model.half())
@@ -37,7 +37,7 @@ if __name__ == '__main__':
     strategy = confident_strategy
     stime = time.time()
 
-    test_videos = sorted([x for x in os.listdir(args.test_dir) if x[-4:] == ".mp4"])
+    test_videos = sorted([x for x in os.listdir(args.test_dir) if x[-4:] == ".mp4"])[:10]
     print("Predicting {} videos".format(len(test_videos)))
     predictions = predict_on_video_set(face_extractor=face_extractor, input_size=input_size, models=models,
                                        strategy=strategy, frames_per_video=frames_per_video, videos=test_videos,
