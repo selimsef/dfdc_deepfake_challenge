@@ -2,25 +2,14 @@ from functools import partial
 
 import numpy as np
 import torch
-from timm.models import skresnext50_32x4d
-from timm.models.dpn import dpn92, dpn131
 from timm.models.efficientnet import tf_efficientnet_b4_ns, tf_efficientnet_b3_ns, \
     tf_efficientnet_b5_ns, tf_efficientnet_b2_ns, tf_efficientnet_b6_ns, tf_efficientnet_b7_ns
-from timm.models.senet import seresnext50_32x4d
 from torch import nn
 from torch.nn.modules.dropout import Dropout
 from torch.nn.modules.linear import Linear
 from torch.nn.modules.pooling import AdaptiveAvgPool2d
 
 encoder_params = {
-    "dpn92": {
-        "features": 2688,
-        "init_op": partial(dpn92, pretrained=True)
-    },
-    "dpn131": {
-        "features": 2688,
-        "init_op": partial(dpn131, pretrained=True)
-    },
     "tf_efficientnet_b3_ns": {
         "features": 1536,
         "init_op": partial(tf_efficientnet_b3_ns, pretrained=True, drop_path_rate=0.2)
@@ -60,14 +49,6 @@ encoder_params = {
     "tf_efficientnet_b6_ns_04d": {
         "features": 2304,
         "init_op": partial(tf_efficientnet_b6_ns, pretrained=True, drop_path_rate=0.4)
-    },
-    "se50": {
-        "features": 2048,
-        "init_op": partial(seresnext50_32x4d, pretrained=True)
-    },
-    "sk50": {
-        "features": 2048,
-        "init_op": partial(skresnext50_32x4d, pretrained=True)
     },
 }
 

@@ -24,7 +24,7 @@ if __name__ == '__main__':
         print("loading state dict {}".format(path))
         checkpoint = torch.load(path, map_location="cpu")
         state_dict = checkpoint.get("state_dict", checkpoint)
-        model.load_state_dict({re.sub("^module.", "", k): v for k, v in state_dict.items()}, strict=False)
+        model.load_state_dict({re.sub("^module.", "", k): v for k, v in state_dict.items()}, strict=True)
         model.eval()
         del checkpoint
         models.append(model.half())
