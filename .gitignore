@@ -1,0 +1,4 @@
+*.csv
+
+logs/
+data/
