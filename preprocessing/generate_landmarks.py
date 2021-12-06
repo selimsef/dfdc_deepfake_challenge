@@ -1,26 +1,23 @@
+import numpy as np
+from facenet_pytorch.models.mtcnn import MTCNN
+from PIL import Image
+from preprocessing.utils import get_original_video_paths
+import cv2
+from tqdm import tqdm
 import argparse
 import os
 from functools import partial
 from multiprocessing.pool import Pool
 
 
-
 os.environ["MKL_NUM_THREADS"] = "1"
 os.environ["NUMEXPR_NUM_THREADS"] = "1"
 os.environ["OMP_NUM_THREADS"] = "1"
 
-from tqdm import tqdm
-
-
-import cv2
 
 cv2.ocl.setUseOpenCL(False)
 cv2.setNumThreads(0)
-from preprocessing.utils import get_original_video_paths
 
-from PIL import Image
-from facenet_pytorch.models.mtcnn import MTCNN
-import numpy as np
 
 detector = MTCNN(margin=0, thresholds=[0.65, 0.75, 0.75], device="cpu")
 
@@ -41,9 +38,11 @@ def save_landmarks(ori_id, root_dir):
 
             if os.path.exists(ori_path):
                 try:
-                    image_ori = cv2.imread(ori_path, cv2.IMREAD_COLOR)[...,::-1]
+                    image_ori = cv2.imread(
+                        ori_path, cv2.IMREAD_COLOR)[..., ::-1]
                     frame_img = Image.fromarray(image_ori)
-                    batch_boxes, conf, landmarks = detector.detect(frame_img, landmarks=True)
+                    batch_boxes, conf, landmarks = detector.detect(
+                        frame_img, landmarks=True)
                     if landmarks is not None:
                         landmarks = np.around(landmarks[0]).astype(np.int16)
                         np.save(landmark_path, landmarks)
@@ -55,7 +54,8 @@ def save_landmarks(ori_id, root_dir):
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Extract image landmarks")
-    parser.add_argument("--root-dir", help="root directory", default="/mnt/sota/datasets/deepfake")
+    parser.add_argument("--root-dir", help="root directory",
+                        default="/mnt/sota/datasets/deepfake")
     args = parser.parse_args()
     return args
 
