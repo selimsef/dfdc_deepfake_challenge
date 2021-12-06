@@ -1,5 +1,5 @@
 import cv2
-from apex.optimizers import FusedAdam, FusedSGD
+# from apex.optimizers import FusedAdam, FusedSGD
 from timm.optim import AdamW
 from torch import optim
 from torch.optim import lr_scheduler
@@ -31,6 +31,7 @@ class AverageMeter(object):
         self.count += n
         self.avg = self.sum / self.count
 
+
 def create_optimizer(optimizer_config, model, master_params=None):
     """Creates optimizer and schedule from configuration
 
@@ -61,7 +62,8 @@ def create_optimizer(optimizer_config, model, master_params=None):
                 classifier_params.append(v)
         params = [
             {"params": net_params},
-            {"params": classifier_params, "lr": optimizer_config["classifier_lr"]},
+            {"params": classifier_params,
+                "lr": optimizer_config["classifier_lr"]},
         ]
     else:
         if master_params:
@@ -75,39 +77,44 @@ def create_optimizer(optimizer_config, model, master_params=None):
                               momentum=optimizer_config["momentum"],
                               weight_decay=optimizer_config["weight_decay"],
                               nesterov=optimizer_config["nesterov"])
-    elif optimizer_config["type"] == "FusedSGD":
-        optimizer = FusedSGD(params,
-                             lr=optimizer_config["learning_rate"],
-                             momentum=optimizer_config["momentum"],
-                             weight_decay=optimizer_config["weight_decay"],
-                             nesterov=optimizer_config["nesterov"])
+    # elif optimizer_config["type"] == "FusedSGD":
+    #     optimizer = FusedSGD(params,
+    #                          lr=optimizer_config["learning_rate"],
+    #                          momentum=optimizer_config["momentum"],
+    #                          weight_decay=optimizer_config["weight_decay"],
+    #                          nesterov=optimizer_config["nesterov"])
     elif optimizer_config["type"] == "Adam":
         optimizer = optim.Adam(params,
                                lr=optimizer_config["learning_rate"],
                                weight_decay=optimizer_config["weight_decay"])
-    elif optimizer_config["type"] == "FusedAdam":
-        optimizer = FusedAdam(params,
-                              lr=optimizer_config["learning_rate"],
-                              weight_decay=optimizer_config["weight_decay"])
+    # elif optimizer_config["type"] == "FusedAdam":
+    #     optimizer = FusedAdam(params,
+    #                           lr=optimizer_config["learning_rate"],
+    #                           weight_decay=optimizer_config["weight_decay"])
     elif optimizer_config["type"] == "AdamW":
         optimizer = AdamW(params,
-                               lr=optimizer_config["learning_rate"],
-                               weight_decay=optimizer_config["weight_decay"])
+                          lr=optimizer_config["learning_rate"],
+                          weight_decay=optimizer_config["weight_decay"])
     elif optimizer_config["type"] == "RmsProp":
         optimizer = RMSprop(params,
-                               lr=optimizer_config["learning_rate"],
-                               weight_decay=optimizer_config["weight_decay"])
+                            lr=optimizer_config["learning_rate"],
+                            weight_decay=optimizer_config["weight_decay"])
     else:
-        raise KeyError("unrecognized optimizer {}".format(optimizer_config["type"]))
+        raise KeyError("unrecognized optimizer {}".format(
+            optimizer_config["type"]))
 
     if optimizer_config["schedule"]["type"] == "step":
-        scheduler = LRStepScheduler(optimizer, **optimizer_config["schedule"]["params"])
+        scheduler = LRStepScheduler(
+            optimizer, **optimizer_config["schedule"]["params"])
     elif optimizer_config["schedule"]["type"] == "clr":
-        scheduler = CyclicLR(optimizer, **optimizer_config["schedule"]["params"])
+        scheduler = CyclicLR(
+            optimizer, **optimizer_config["schedule"]["params"])
     elif optimizer_config["schedule"]["type"] == "multistep":
-        scheduler = MultiStepLR(optimizer, **optimizer_config["schedule"]["params"])
+        scheduler = MultiStepLR(
+            optimizer, **optimizer_config["schedule"]["params"])
     elif optimizer_config["schedule"]["type"] == "exponential":
-        scheduler = ExponentialLRScheduler(optimizer, **optimizer_config["schedule"]["params"])
+        scheduler = ExponentialLRScheduler(
+            optimizer, **optimizer_config["schedule"]["params"])
     elif optimizer_config["schedule"]["type"] == "poly":
         scheduler = PolyLR(optimizer, **optimizer_config["schedule"]["params"])
     elif optimizer_config["schedule"]["type"] == "constant":

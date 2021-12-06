@@ -14,23 +14,23 @@ from training.tools.utils import create_optimizer, AverageMeter
 from training.transforms.albu import IsotropicResize
 from training.zoo import classifiers
 
-os.environ["MKL_NUM_THREADS"] = "1"
-os.environ["NUMEXPR_NUM_THREADS"] = "1"
-os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"  # nopep8
+os.environ["NUMEXPR_NUM_THREADS"] = "1"  # nopep8
+os.environ["OMP_NUM_THREADS"] = "1"  # nopep8
 
 import cv2
 
-cv2.ocl.setUseOpenCL(False)
-cv2.setNumThreads(0)
+cv2.ocl.setUseOpenCL(False)  # nopep8
+cv2.setNumThreads(0)  # nopep8
 import numpy as np
 from albumentations import Compose, RandomBrightnessContrast, \
     HorizontalFlip, FancyPCA, HueSaturationValue, OneOf, ToGray, \
     ShiftScaleRotate, ImageCompression, PadIfNeeded, GaussNoise, GaussianBlur
 
-from apex.parallel import DistributedDataParallel, convert_syncbn_model
+# from apex.parallel import DistributedDataParallel, convert_syncbn_model
 from tensorboardX import SummaryWriter
 
-from apex import amp
+# from apex import amp
 
 import torch
 from torch.backends import cudnn
@@ -38,6 +38,7 @@ from torch.nn import DataParallel
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 import torch.distributed as dist
+
 
 torch.backends.cudnn.benchmark = True
 
@@ -49,22 +50,30 @@ def create_train_transforms(size=300):
         GaussianBlur(blur_limit=3, p=0.05),
         HorizontalFlip(),
         OneOf([
-            IsotropicResize(max_side=size, interpolation_down=cv2.INTER_AREA, interpolation_up=cv2.INTER_CUBIC),
-            IsotropicResize(max_side=size, interpolation_down=cv2.INTER_AREA, interpolation_up=cv2.INTER_LINEAR),
-            IsotropicResize(max_side=size, interpolation_down=cv2.INTER_LINEAR, interpolation_up=cv2.INTER_LINEAR),
+            IsotropicResize(max_side=size, interpolation_down=cv2.INTER_AREA,
+                            interpolation_up=cv2.INTER_CUBIC),
+            IsotropicResize(max_side=size, interpolation_down=cv2.INTER_AREA,
+                            interpolation_up=cv2.INTER_LINEAR),
+            IsotropicResize(max_side=size, interpolation_down=cv2.INTER_LINEAR,
+                            interpolation_up=cv2.INTER_LINEAR),
         ], p=1),
-        PadIfNeeded(min_height=size, min_width=size, border_mode=cv2.BORDER_CONSTANT),
-        OneOf([RandomBrightnessContrast(), FancyPCA(), HueSaturationValue()], p=0.7),
+        PadIfNeeded(min_height=size, min_width=size,
+                    border_mode=cv2.BORDER_CONSTANT),
+        OneOf([RandomBrightnessContrast(), FancyPCA(),
+              HueSaturationValue()], p=0.7),
         ToGray(p=0.2),
-        ShiftScaleRotate(shift_limit=0.1, scale_limit=0.2, rotate_limit=10, border_mode=cv2.BORDER_CONSTANT, p=0.5),
+        ShiftScaleRotate(shift_limit=0.1, scale_limit=0.2,
+                         rotate_limit=10, border_mode=cv2.BORDER_CONSTANT, p=0.5),
     ]
     )
 
 
 def create_val_transforms(size=300):
     return Compose([
-        IsotropicResize(max_side=size, interpolation_down=cv2.INTER_AREA, interpolation_up=cv2.INTER_CUBIC),
-        PadIfNeeded(min_height=size, min_width=size, border_mode=cv2.BORDER_CONSTANT),
+        IsotropicResize(max_side=size, interpolation_down=cv2.INTER_AREA,
+                        interpolation_up=cv2.INTER_CUBIC),
+        PadIfNeeded(min_height=size, min_width=size,
+                    border_mode=cv2.BORDER_CONSTANT),
     ])
 
 
@@ -73,7 +82,8 @@ def main():
     arg = parser.add_argument
     arg('--config', metavar='CONFIG_FILE', help='path to configuration file')
     arg('--workers', type=int, default=6, help='number of cpu threads to use')
-    arg('--gpu', type=str, default='0', help='List of GPUs for parallel training, e.g. 0,1,2,3')
+    arg('--gpu', type=str, default='0',
+        help='List of GPUs for parallel training, e.g. 0,1,2,3')
     arg('--output-dir', type=str, default='weights/')
     arg('--resume', type=str, default='')
     arg('--fold', type=int, default=0)
@@ -100,12 +110,16 @@ def main():
     os.makedirs(args.output_dir, exist_ok=True)
     if args.distributed:
         torch.cuda.set_device(args.local_rank)
-        torch.distributed.init_process_group(backend='nccl', init_method='env://')
+        torch.distributed.init_process_group(
+            backend='nccl', init_method='env://')
     else:
         os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
         os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
 
     cudnn.benchmark = True
+
+    print(args.distributed)
+    exit()
 
     conf = load_config(args.config)
     model = classifiers.__dict__[conf['network']](encoder=conf['encoder'])
@@ -138,7 +152,8 @@ def main():
                                            data_path=args.data_dir,
                                            label_smoothing=args.label_smoothing,
                                            folds_csv=args.folds_csv,
-                                           transforms=create_train_transforms(conf["size"]),
+                                           transforms=create_train_transforms(
+                                               conf["size"]),
                                            normalize=conf.get("normalize", None))
     data_val = DeepFakeClassifierDataset(mode="val",
                                          fold=args.fold,
@@ -146,12 +161,14 @@ def main():
                                          crops_dir=args.crops_dir,
                                          data_path=args.data_dir,
                                          folds_csv=args.folds_csv,
-                                         transforms=create_val_transforms(conf["size"]),
+                                         transforms=create_val_transforms(
+                                             conf["size"]),
                                          normalize=conf.get("normalize", None))
     val_data_loader = DataLoader(data_val, batch_size=batch_size * 2, num_workers=args.workers, shuffle=False,
                                  pin_memory=False)
     os.makedirs(args.logdir, exist_ok=True)
-    summary_writer = SummaryWriter(args.logdir + '/' + conf.get("prefix", args.prefix) + conf['encoder'] + "_" + str(args.fold))
+    summary_writer = SummaryWriter(
+        args.logdir + '/' + conf.get("prefix", args.prefix) + conf['encoder'] + "_" + str(args.fold))
     if args.resume:
         if os.path.isfile(args.resume):
             print("=> loading checkpoint '{}'".format(args.resume))
@@ -176,7 +193,8 @@ def main():
                                           opt_level=args.opt_level,
                                           loss_scale='dynamic')
 
-    snapshot_name = "{}{}_{}_{}".format(conf.get("prefix", args.prefix), conf['network'], conf['encoder'], args.fold)
+    snapshot_name = "{}{}_{}_{}".format(
+        conf.get("prefix", args.prefix), conf['network'], conf['encoder'], args.fold)
 
     if args.distributed:
         model = DistributedDataParallel(model, delay_allreduce=True)
@@ -188,7 +206,8 @@ def main():
         data_train.reset(epoch, args.seed)
         train_sampler = None
         if args.distributed:
-            train_sampler = torch.utils.data.distributed.DistributedSampler(data_train)
+            train_sampler = torch.utils.data.distributed.DistributedSampler(
+                data_train)
             train_sampler.set_epoch(epoch)
         if epoch < args.freeze_epochs:
             print("Freezing encoder!!!")
@@ -233,9 +252,11 @@ def evaluate_val(args, data_val, bce_best, model, snapshot_name, current_epoch, 
 
     bce, probs, targets = validate(model, data_loader=data_val)
     if args.local_rank == 0:
-        summary_writer.add_scalar('val/bce', float(bce), global_step=current_epoch)
+        summary_writer.add_scalar(
+            'val/bce', float(bce), global_step=current_epoch)
         if bce < bce_best:
-            print("Epoch {} improved from {} to {}".format(current_epoch, bce_best, bce))
+            print("Epoch {} improved from {} to {}".format(
+                current_epoch, bce_best, bce))
             if args.output_dir is not None:
                 torch.save({
                     'epoch': current_epoch + 1,
@@ -250,7 +271,8 @@ def evaluate_val(args, data_val, bce_best, model, snapshot_name, current_epoch, 
             'state_dict': model.state_dict(),
             'bce_best': bce_best,
         }, args.output_dir + snapshot_name + "_last")
-        print("Epoch: {} bce: {}, bce_best: {}".format(current_epoch, bce, bce_best))
+        print("Epoch: {} bce: {}, bce_best: {}".format(
+            current_epoch, bce, bce_best))
     return bce_best
 
 
@@ -300,7 +322,8 @@ def train_epoch(current_epoch, loss_functions, model, optimizer, scheduler, trai
     max_iters = conf["batches_per_epoch"]
     print("training epoch {}".format(current_epoch))
     model.train()
-    pbar = tqdm(enumerate(train_data_loader), total=max_iters, desc="Epoch {}".format(current_epoch), ncols=0)
+    pbar = tqdm(enumerate(train_data_loader), total=max_iters,
+                desc="Epoch {}".format(current_epoch), ncols=0)
     if conf["optimizer"]["schedule"]["mode"] == "epoch":
         scheduler.step(current_epoch)
     for i, sample in pbar:
@@ -321,17 +344,23 @@ def train_epoch(current_epoch, loss_functions, model, optimizer, scheduler, trai
 
         ohem = conf.get("ohem_samples", None)
         if torch.sum(fake_idx * 1) > 0:
-            fake_loss = loss_functions["classifier_loss"](out_labels[fake_idx], labels[fake_idx])
+            fake_loss = loss_functions["classifier_loss"](
+                out_labels[fake_idx], labels[fake_idx])
         if torch.sum(real_idx * 1) > 0:
-            real_loss = loss_functions["classifier_loss"](out_labels[real_idx], labels[real_idx])
+            real_loss = loss_functions["classifier_loss"](
+                out_labels[real_idx], labels[real_idx])
         if ohem:
-            fake_loss = topk(fake_loss, k=min(ohem, fake_loss.size(0)), sorted=False)[0].mean()
-            real_loss = topk(real_loss, k=min(ohem, real_loss.size(0)), sorted=False)[0].mean()
+            fake_loss = topk(fake_loss, k=min(
+                ohem, fake_loss.size(0)), sorted=False)[0].mean()
+            real_loss = topk(real_loss, k=min(
+                ohem, real_loss.size(0)), sorted=False)[0].mean()
 
         loss = (fake_loss + real_loss) / 2
         losses.update(loss.item(), imgs.size(0))
-        fake_losses.update(0 if fake_loss == 0 else fake_loss.item(), imgs.size(0))
-        real_losses.update(0 if real_loss == 0 else real_loss.item(), imgs.size(0))
+        fake_losses.update(
+            0 if fake_loss == 0 else fake_loss.item(), imgs.size(0))
+        real_losses.update(
+            0 if real_loss == 0 else real_loss.item(), imgs.size(0))
 
         optimizer.zero_grad()
         pbar.set_postfix({"lr": float(scheduler.get_lr()[-1]), "epoch": current_epoch, "loss": losses.avg,
@@ -353,8 +382,10 @@ def train_epoch(current_epoch, loss_functions, model, optimizer, scheduler, trai
     if local_rank == 0:
         for idx, param_group in enumerate(optimizer.param_groups):
             lr = param_group['lr']
-            summary_writer.add_scalar('group{}/lr'.format(idx), float(lr), global_step=current_epoch)
-        summary_writer.add_scalar('train/loss', float(losses.avg), global_step=current_epoch)
+            summary_writer.add_scalar(
+                'group{}/lr'.format(idx), float(lr), global_step=current_epoch)
+        summary_writer.add_scalar(
+            'train/loss', float(losses.avg), global_step=current_epoch)
 
 
 if __name__ == '__main__':
