@@ -1,4 +1,4 @@
-DATA_ROOT="data/train_sample_videos"
+DATA_ROOT="data/"
 echo "Extracting bounding boxes from original videos"
 PYTHONPATH=. python preprocessing/detect_original_faces.py --root-dir $DATA_ROOT
 

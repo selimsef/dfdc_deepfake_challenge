@@ -118,15 +118,14 @@ def main():
 
     cudnn.benchmark = True
 
-    print(args.distributed)
-    exit()
-
     conf = load_config(args.config)
     model = classifiers.__dict__[conf['network']](encoder=conf['encoder'])
 
-    model = model.cuda()
+    if torch.cuda.is_available():
+        model = model.cuda()
     if args.distributed:
         model = convert_syncbn_model(model)
+
     ohem = conf.get("ohem_samples", None)
     reduction = "mean"
     if ohem:
@@ -134,7 +133,13 @@ def main():
     loss_fn = []
     weights = []
     for loss_name, weight in conf["losses"].items():
-        loss_fn.append(losses.__dict__[loss_name](reduction=reduction).cuda())
+        if torch.cuda.is_available():
+            loss_fn.append(losses.__dict__[loss_name](
+                reduction=reduction).cuda())
+        else:
+            loss_fn.append(losses.__dict__[loss_name](
+                reduction=reduction))
+
         weights.append(weight)
     loss = WeightedLosses(loss_fn, weights)
     loss_functions = {"classifier_loss": loss}
