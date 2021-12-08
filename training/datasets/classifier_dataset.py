@@ -360,7 +360,8 @@ class DeepFakeClassifierDataset(Dataset):
     def _prepare_data(self, epoch, seed):
         df = self.df
         if self.mode == "train":
-            rows = df[df["fold"] != self.fold]
+            # for test run, we only have fold == 0
+            rows = df[df["fold"] == self.fold]
         else:
             rows = df[df["fold"] == self.fold]
         seed = (epoch + 1) * seed
@@ -373,7 +374,7 @@ class DeepFakeClassifierDataset(Dataset):
             #rows = rows[rows["video"].isin(PUBLIC_SET)]
 
         print(
-            "real {} fakes {} mode {}".format(len(rows[rows["label"] == 0]), len(rows[rows["label"] == 1]), self.mode))
+            "real: {}, fakes: {}, mode: {}".format(len(rows[rows["label"] == 0]), len(rows[rows["label"] == 1]), self.mode))
         data = rows.values
 
         np.random.seed(seed)

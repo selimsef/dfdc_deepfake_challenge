@@ -340,15 +340,23 @@ def train_epoch(current_epoch, loss_functions, model, optimizer, scheduler, trai
     fake_losses = AverageMeter()
     real_losses = AverageMeter()
     max_iters = conf["batches_per_epoch"]
-    print("training epoch {}".format(current_epoch))
+    print("training epoch: {}".format(current_epoch))
+
     model.train()
     pbar = tqdm(enumerate(train_data_loader), total=max_iters,
                 desc="Epoch {}".format(current_epoch), ncols=0)
     if conf["optimizer"]["schedule"]["mode"] == "epoch":
         scheduler.step(current_epoch)
     for i, sample in pbar:
-        imgs = sample["image"].cuda()
-        labels = sample["labels"].cuda().float()
+        imgs = sample["image"]
+        labels = sample["labels"]
+
+        if torch.cuda.is_available():
+            imgs = imgs.cuda()
+            labels = labels.cuda().float()
+        else:
+            labels = labels.float()
+
         out_labels = model(imgs)
         if only_valid:
             valid_idx = sample["valid"].cuda().float() > 0
@@ -369,6 +377,7 @@ def train_epoch(current_epoch, loss_functions, model, optimizer, scheduler, trai
         if torch.sum(real_idx * 1) > 0:
             real_loss = loss_functions["classifier_loss"](
                 out_labels[real_idx], labels[real_idx])
+
         if ohem:
             fake_loss = topk(fake_loss, k=min(
                 ohem, fake_loss.size(0)), sorted=False)[0].mean()
@@ -391,9 +400,10 @@ def train_epoch(current_epoch, loss_functions, model, optimizer, scheduler, trai
                 scaled_loss.backward()
         else:
             loss.backward()
-        torch.nn.utils.clip_grad_norm_(amp.master_params(optimizer), 1)
+        torch.nn.utils.clip_grad_norm_(optimizer, 1)
         optimizer.step()
-        torch.cuda.synchronize()
+        if torch.cuda.is_available():
+            torch.cuda.synchronize()
         if conf["optimizer"]["schedule"]["mode"] in ("step", "poly"):
             scheduler.step(i + current_epoch * max_iters)
         if i == max_iters - 1:
