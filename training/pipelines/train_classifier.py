@@ -1,5 +1,7 @@
 import argparse
+import logging
 import json
+import sys
 import os
 from collections import defaultdict
 
@@ -41,6 +43,16 @@ import torch.distributed as dist
 
 
 torch.backends.cudnn.benchmark = True
+
+stdout_handler = logging.StreamHandler(sys.stdout)
+stdout_handler.setLevel(logging.INFO)
+handlers = [stdout_handler]
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(levelname)s; %(asctime)s; %(module)s:%(funcName)s:%(lineno)d; %(message)s",
+    handlers=handlers)
+
+logger = logging.getLogger(__name__)
 
 
 def create_train_transforms(size=300):
@@ -169,6 +181,7 @@ def main():
                                          transforms=create_val_transforms(
                                              conf["size"]),
                                          normalize=conf.get("normalize", None))
+
     val_data_loader = DataLoader(data_val, batch_size=batch_size * 2, num_workers=args.workers, shuffle=False,
                                  pin_memory=False)
     os.makedirs(args.logdir, exist_ok=True)
@@ -201,10 +214,12 @@ def main():
     snapshot_name = "{}{}_{}_{}".format(
         conf.get("prefix", args.prefix), conf['network'], conf['encoder'], args.fold)
 
-    if args.distributed:
-        model = DistributedDataParallel(model, delay_allreduce=True)
-    else:
-        model = DataParallel(model).cuda()
+    # if args.distributed:
+    #     model = DistributedDataParallel(model, delay_allreduce=True)
+    # else:
+    #     model = DataParallel(model).cuda(
+    #     ) if torch.cuda.is_available() else DataParallel(model)
+
     data_val.reset(1, args.seed)
     max_epochs = conf['optimizer']['schedule']['epochs']
     for epoch in range(start_epoch, max_epochs):
@@ -220,8 +235,8 @@ def main():
             for p in model.module.encoder.parameters():
                 p.requires_grad = False
         else:
-            model.module.encoder.train()
-            for p in model.module.encoder.parameters():
+            model.encoder.train()
+            for p in model.encoder.parameters():
                 p.requires_grad = True
 
         train_data_loader = DataLoader(data_train, batch_size=batch_size, num_workers=args.workers,

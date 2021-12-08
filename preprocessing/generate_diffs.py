@@ -5,7 +5,7 @@ from tqdm import tqdm
 from multiprocessing.pool import Pool
 from functools import partial
 # from skimage.measure import compare_ssim
-from skimage import measure
+from skimage import metrics
 import argparse
 import os
 
@@ -26,6 +26,7 @@ def save_diffs(pair, root_dir):
     ori_dir = os.path.join(root_dir, "crops", ori_id)
     fake_dir = os.path.join(root_dir, "crops", fake_id)
     diff_dir = os.path.join(root_dir, "diffs", fake_id)
+
     os.makedirs(diff_dir, exist_ok=True)
     for frame in range(320):
         if frame % 10 != 0:
@@ -36,18 +37,20 @@ def save_diffs(pair, root_dir):
             ori_path = os.path.join(ori_dir, image_id)
             fake_path = os.path.join(fake_dir, image_id)
             diff_path = os.path.join(diff_dir, diff_image_id)
+
+            # some frames didn't exist...
             if os.path.exists(ori_path) and os.path.exists(fake_path):
                 img1 = cv2.imread(ori_path, cv2.IMREAD_COLOR)
                 img2 = cv2.imread(fake_path, cv2.IMREAD_COLOR)
                 try:
-                    d, a = measure.compare_ssim(
+                    d, a = metrics.structural_similarity(
                         img1, img2, multichannel=True, full=True)
                     a = 1 - a
                     diff = (a * 255).astype(np.uint8)
                     diff = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
                     cv2.imwrite(diff_path, diff)
                 except Exception as e:
-                    pass
+                    print(e)
 
 
 def parse_args():

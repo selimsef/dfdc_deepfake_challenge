@@ -90,8 +90,10 @@ def main():
         holdoutset = {k for k, v in video_fold.items() if v == fold}
         trainset = {k for k, v in video_fold.items() if v != fold}
         assert holdoutset.isdisjoint(trainset), "Folds have leaks"
+
     data = []
     ori_ori = set([(ori, ori) for ori, fake in ori_fakes])
+
     with Pool(processes=os.cpu_count()) as p:
         with tqdm(total=len(ori_ori)) as pbar:
             func = partial(get_paths, label=0, root_dir=args.root_dir)

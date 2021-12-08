@@ -143,7 +143,8 @@ def change_padding(image, part=5):
     # original padding was done with 1/3 from each side, too much
     pad_h = int(((3 / 5) * h) / part)
     pad_w = int(((3 / 5) * w) / part)
-    image = image[h // 5 - pad_h:-h // 5 + pad_h, w // 5 - pad_w:-w // 5 + pad_w]
+    image = image[h // 5 - pad_h:-h // 5 +
+                  pad_h, w // 5 - pad_w:-w // 5 + pad_w]
     return image
 
 
@@ -201,8 +202,10 @@ def blend_original(img):
     while abs(h1 - h) < h // 3 and abs(w1 - w) < w // 3:
         h1 = random.randint(h - h // 2, h + h // 2)
         w1 = random.randint(w - w // 2, w + w // 2)
-    face = cv2.resize(face, (w1, h1), interpolation=random.choice([cv2.INTER_LINEAR, cv2.INTER_AREA, cv2.INTER_CUBIC]))
-    face = cv2.resize(face, (w, h), interpolation=random.choice([cv2.INTER_LINEAR, cv2.INTER_AREA, cv2.INTER_CUBIC]))
+    face = cv2.resize(face, (w1, h1), interpolation=random.choice(
+        [cv2.INTER_LINEAR, cv2.INTER_AREA, cv2.INTER_CUBIC]))
+    face = cv2.resize(face, (w, h), interpolation=random.choice(
+        [cv2.INTER_LINEAR, cv2.INTER_AREA, cv2.INTER_CUBIC]))
 
     raw_mask = binary_erosion(raw_mask, iterations=random.randint(4, 10))
     img[raw_mask, :] = face[raw_mask, :]
@@ -210,7 +213,8 @@ def blend_original(img):
         img = OneOf([GaussianBlur(), Blur()], p=0.5)(image=img)["image"]
     # image compression
     if random.random() < 0.5:
-        img = ImageCompression(quality_lower=40, quality_upper=95)(image=img)["image"]
+        img = ImageCompression(
+            quality_lower=40, quality_upper=95)(image=img)["image"]
     return img
 
 
@@ -254,12 +258,15 @@ class DeepFakeClassifierDataset(Dataset):
             video, img_file, label, ori_video, frame, fold = self.data[index]
             try:
                 if self.mode == "train":
-                    label = np.clip(label, self.label_smoothing, 1 - self.label_smoothing)
-                img_path = os.path.join(self.data_root, self.crops_dir, video, img_file)
+                    label = np.clip(label, self.label_smoothing,
+                                    1 - self.label_smoothing)
+                img_path = os.path.join(
+                    self.data_root, self.crops_dir, video, img_file)
                 image = cv2.imread(img_path, cv2.IMREAD_COLOR)
                 image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
                 mask = np.zeros(image.shape[:2], dtype=np.uint8)
-                diff_path = os.path.join(self.data_root, "diffs", video, img_file[:-4] + "_diff.png")
+                diff_path = os.path.join(
+                    self.data_root, "diffs", video, img_file[:-4] + "_diff.png")
                 try:
                     msk = cv2.imread(diff_path, cv2.IMREAD_GRAYSCALE)
                     if msk is not None:
@@ -268,7 +275,8 @@ class DeepFakeClassifierDataset(Dataset):
                     print("not found mask", diff_path)
                     pass
                 if self.mode == "train" and self.hardcore and not self.rotation:
-                    landmark_path = os.path.join(self.data_root, "landmarks", ori_video, img_file[:-4] + ".npy")
+                    landmark_path = os.path.join(
+                        self.data_root, "landmarks", ori_video, img_file[:-4] + ".npy")
                     if os.path.exists(landmark_path) and random.random() < 0.7:
                         landmarks = np.load(landmark_path)
                         image = remove_landmark(image, landmarks)
@@ -276,7 +284,8 @@ class DeepFakeClassifierDataset(Dataset):
                         blackout_convex_hull(image)
                     elif random.random() < 0.1:
                         binary_mask = mask > 0.4 * 255
-                        masks = prepare_bit_masks((binary_mask * 1).astype(np.uint8))
+                        masks = prepare_bit_masks(
+                            (binary_mask * 1).astype(np.uint8))
                         tries = 6
                         current_try = 1
                         while current_try < tries:
@@ -288,7 +297,8 @@ class DeepFakeClassifierDataset(Dataset):
                             current_try += 1
                 if self.mode == "train" and self.padding_part > 3:
                     image = change_padding(image, self.padding_part)
-                valid_label = np.count_nonzero(mask[mask > 20]) > 32 or label < 0.5
+                valid_label = np.count_nonzero(
+                    mask[mask > 20]) > 32 or label < 0.5
                 valid_label = 1 if valid_label else 0
                 rotation = 0
                 if self.transforms:
@@ -316,7 +326,8 @@ class DeepFakeClassifierDataset(Dataset):
                         "valid": valid_label, "rotations": rotation}
             except Exception as e:
                 traceback.print_exc(file=sys.stdout)
-                print("Broken image", os.path.join(self.data_root, self.crops_dir, video, img_file))
+                print("Broken image", os.path.join(
+                    self.data_root, self.crops_dir, video, img_file))
                 index = random.randint(0, len(self.data) - 1)
 
     def random_blackout_landmark(self, image, mask, landmarks):
