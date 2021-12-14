@@ -348,7 +348,7 @@ def predict_on_video(face_extractor, video_path, batch_size, input_size, models,
                 with torch.no_grad():
                     preds = []
                     for model in models:
-                        y_pred = model(x[:n].half())
+                        y_pred = model(x[:n])
                         y_pred = torch.sigmoid(y_pred.squeeze())
                         bpred = y_pred[:n].cpu().numpy()
                         preds.append(strategy(bpred))
