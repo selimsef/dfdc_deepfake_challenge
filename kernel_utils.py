@@ -48,13 +48,17 @@ class VideoReader:
 
         capture = cv2.VideoCapture(path)
         frame_count = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
-        if frame_count <= 0: return None
+        if frame_count <= 0:
+            return None
 
-        frame_idxs = np.linspace(0, frame_count - 1, num_frames, endpoint=True, dtype=np.int)
+        frame_idxs = np.linspace(
+            0, frame_count - 1, num_frames, endpoint=True, dtype=np.int)
         if jitter > 0:
             np.random.seed(seed)
-            jitter_offsets = np.random.randint(-jitter, jitter, len(frame_idxs))
-            frame_idxs = np.clip(frame_idxs + jitter_offsets, 0, frame_count - 1)
+            jitter_offsets = np.random.randint(-jitter,
+                                               jitter, len(frame_idxs))
+            frame_idxs = np.clip(
+                frame_idxs + jitter_offsets, 0, frame_count - 1)
 
         result = self._read_frames_at_indices(path, capture, frame_idxs)
         capture.release()
@@ -73,9 +77,11 @@ class VideoReader:
 
         capture = cv2.VideoCapture(path)
         frame_count = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
-        if frame_count <= 0: return None
+        if frame_count <= 0:
+            return None
 
-        frame_idxs = sorted(np.random.choice(np.arange(0, frame_count), num_frames))
+        frame_idxs = sorted(np.random.choice(
+            np.arange(0, frame_count), num_frames))
         result = self._read_frames_at_indices(path, capture, frame_idxs)
 
         capture.release()
@@ -115,7 +121,8 @@ class VideoReader:
                 ret = capture.grab()
                 if not ret:
                     if self.verbose:
-                        print("Error grabbing frame %d from movie %s" % (frame_idx, path))
+                        print("Error grabbing frame %d from movie %s" %
+                              (frame_idx, path))
                     break
 
                 # Need to look at this frame?
@@ -124,7 +131,8 @@ class VideoReader:
                     ret, frame = capture.retrieve()
                     if not ret or frame is None:
                         if self.verbose:
-                            print("Error retrieving frame %d from movie %s" % (frame_idx, path))
+                            print("Error retrieving frame %d from movie %s" %
+                                  (frame_idx, path))
                         break
 
                     frame = self._postprocess_frame(frame)
@@ -174,7 +182,8 @@ class VideoReader:
         ret, frame = capture.read()
         if not ret or frame is None:
             if self.verbose:
-                print("Error retrieving frame %d from movie %s" % (frame_idx, path))
+                print("Error retrieving frame %d from movie %s" %
+                      (frame_idx, path))
             return None
         else:
             frame = self._postprocess_frame(frame)
@@ -198,8 +207,10 @@ class VideoReader:
 
 class FaceExtractor:
     def __init__(self, video_read_fn):
+        device = "cuda" if torch.cuda.is_available() else "cpu"
         self.video_read_fn = video_read_fn
-        self.detector = MTCNN(margin=0, thresholds=[0.7, 0.8, 0.8], device="cuda")
+        self.detector = MTCNN(margin=0, thresholds=[
+                              0.7, 0.8, 0.8], device=device)
 
     def process_videos(self, input_dir, filenames, video_idxs):
         videos_read = []
@@ -212,7 +223,8 @@ class FaceExtractor:
             video_path = os.path.join(input_dir, filename)
             result = self.video_read_fn(video_path)
             # Error? Then skip this video.
-            if result is None: continue
+            if result is None:
+                continue
 
             videos_read.append(video_idx)
 
@@ -239,7 +251,8 @@ class FaceExtractor:
                         h = ymax - ymin
                         p_h = h // 3
                         p_w = w // 3
-                        crop = frame[max(ymin - p_h, 0):ymax + p_h, max(xmin - p_w, 0):xmax + p_w]
+                        crop = frame[max(ymin - p_h, 0):ymax +
+                                     p_h, max(xmin - p_w, 0):xmax + p_w]
                         faces.append(crop)
                         scores.append(score)
 
@@ -260,7 +273,6 @@ class FaceExtractor:
         return self.process_videos(input_dir, filenames, [0])
 
 
-
 def confident_strategy(pred, t=0.8):
     pred = np.array(pred)
     sz = len(pred)
@@ -273,6 +285,7 @@ def confident_strategy(pred, t=0.8):
     else:
         return np.mean(pred)
 
+
 strategy = confident_strategy
 
 
@@ -281,7 +294,8 @@ def put_to_center(img, input_size):
     image = np.zeros((input_size, input_size, 3), dtype=np.uint8)
     start_w = (input_size - img.shape[1]) // 2
     start_h = (input_size - img.shape[0]) // 2
-    image[start_h:start_h + img.shape[0], start_w: start_w + img.shape[1], :] = img
+    image[start_h:start_h + img.shape[0],
+          start_w: start_w + img.shape[1], :] = img
     return image
 
 
@@ -308,21 +322,24 @@ def predict_on_video(face_extractor, video_path, batch_size, input_size, models,
     try:
         faces = face_extractor.process_video(video_path)
         if len(faces) > 0:
-            x = np.zeros((batch_size, input_size, input_size, 3), dtype=np.uint8)
+            x = np.zeros((batch_size, input_size, input_size, 3),
+                         dtype=np.uint8)
             n = 0
             for frame_data in faces:
                 for face in frame_data["faces"]:
                     resized_face = isotropically_resize_image(face, input_size)
                     resized_face = put_to_center(resized_face, input_size)
                     if apply_compression:
-                        resized_face = image_compression(resized_face, quality=90, image_type=".jpg")
+                        resized_face = image_compression(
+                            resized_face, quality=90, image_type=".jpg")
                     if n + 1 < batch_size:
                         x[n] = resized_face
                         n += 1
                     else:
                         pass
             if n > 0:
-                x = torch.tensor(x, device="cuda").float()
+                device = "cuda" if torch.cuda.is_available() else "cpu"
+                x = torch.tensor(x, device=device).float()
                 # Preprocess the images.
                 x = x.permute((0, 3, 1, 2))
                 for i in range(len(x)):
@@ -356,4 +373,3 @@ def predict_on_video_set(face_extractor, videos, input_size, num_workers, test_d
     with ThreadPoolExecutor(max_workers=num_workers) as ex:
         predictions = ex.map(process_file, range(len(videos)))
     return list(predictions)
-

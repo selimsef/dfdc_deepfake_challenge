@@ -1,0 +1,7 @@
+*.csv
+
+logs/
+data/
+model/
+weights/
+test_videos/

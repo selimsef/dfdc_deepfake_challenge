@@ -3,7 +3,7 @@ import random
 import cv2
 import numpy as np
 from albumentations import DualTransform, ImageOnlyTransform
-from albumentations.augmentations.functional import crop
+from albumentations.augmentations.functional import cutout
 
 
 def isotropically_resize_image(img, size, interpolation_down=cv2.INTER_AREA, interpolation_up=cv2.INTER_CUBIC):
@@ -49,7 +49,8 @@ class Resize4xAndBack(ImageOnlyTransform):
     def apply(self, img, **params):
         h, w = img.shape[:2]
         scale = random.choice([2, 4])
-        img = cv2.resize(img, (w // scale, h // scale), interpolation=cv2.INTER_AREA)
+        img = cv2.resize(img, (w // scale, h // scale),
+                         interpolation=cv2.INTER_AREA)
         img = cv2.resize(img, (w, h),
                          interpolation=random.choice([cv2.INTER_CUBIC, cv2.INTER_LINEAR, cv2.INTER_NEAREST]))
         return img
@@ -58,13 +59,14 @@ class Resize4xAndBack(ImageOnlyTransform):
 class RandomSizedCropNonEmptyMaskIfExists(DualTransform):
 
     def __init__(self, min_max_height, w2h_ratio=[0.7, 1.3], always_apply=False, p=0.5):
-        super(RandomSizedCropNonEmptyMaskIfExists, self).__init__(always_apply, p)
+        super(RandomSizedCropNonEmptyMaskIfExists,
+              self).__init__(always_apply, p)
 
         self.min_max_height = min_max_height
         self.w2h_ratio = w2h_ratio
 
     def apply(self, img, x_min=0, x_max=0, y_min=0, y_max=0, **params):
-        cropped = crop(img, x_min, y_min, x_max, y_max)
+        cropped = cutout(img, (x_min, y_min, x_max, y_max))
         return cropped
 
     @property
@@ -74,7 +76,8 @@ class RandomSizedCropNonEmptyMaskIfExists(DualTransform):
     def get_params_dependent_on_targets(self, params):
         mask = params["mask"]
         mask_height, mask_width = mask.shape[:2]
-        crop_height = int(mask_height * random.uniform(self.min_max_height[0], self.min_max_height[1]))
+        crop_height = int(
+            mask_height * random.uniform(self.min_max_height[0], self.min_max_height[1]))
         w2h_ratio = random.uniform(*self.w2h_ratio)
         crop_width = min(int(crop_height * w2h_ratio), mask_width - 1)
         if mask.sum() == 0:

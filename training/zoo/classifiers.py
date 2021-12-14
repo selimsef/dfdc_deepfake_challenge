@@ -44,7 +44,7 @@ encoder_params = {
     },
     "tf_efficientnet_b7_ns": {
         "features": 2560,
-        "init_op": partial(tf_efficientnet_b7_ns, pretrained=True, drop_path_rate=0.2)
+        "init_op": partial(tf_efficientnet_b7_ns, pretrained=False, drop_path_rate=0.2)
     },
     "tf_efficientnet_b6_ns_04d": {
         "features": 2304,
@@ -86,7 +86,8 @@ def setup_srm_weights(input_channels: int = 3) -> torch.Tensor:
 def setup_srm_layer(input_channels: int = 3) -> torch.nn.Module:
     """Creates a SRM convolution layer for noise analysis."""
     weights = setup_srm_weights(input_channels)
-    conv = torch.nn.Conv2d(input_channels, out_channels=3, kernel_size=5, stride=1, padding=2, bias=False)
+    conv = torch.nn.Conv2d(input_channels, out_channels=3,
+                           kernel_size=5, stride=1, padding=2, bias=False)
     with torch.no_grad():
         conv.weight = torch.nn.Parameter(weights, requires_grad=False)
     return conv
@@ -96,6 +97,9 @@ class DeepFakeClassifierSRM(nn.Module):
     def __init__(self, encoder, dropout_rate=0.5) -> None:
         super().__init__()
         self.encoder = encoder_params[encoder]["init_op"]()
+        self.encoder.load_state_dict(
+            torch.load("model/tf_efficientnet_b7_ns.pth"))
+
         self.avg_pool = AdaptiveAvgPool2d((1, 1))
         self.srm_conv = setup_srm_layer(3)
         self.dropout = Dropout(dropout_rate)
@@ -154,13 +158,12 @@ class DeepFakeClassifier(nn.Module):
         return x
 
 
-
-
 class DeepFakeClassifierGWAP(nn.Module):
     def __init__(self, encoder, dropout_rate=0.5) -> None:
         super().__init__()
         self.encoder = encoder_params[encoder]["init_op"]()
-        self.avg_pool = GlobalWeightedAvgPool2d(encoder_params[encoder]["features"])
+        self.avg_pool = GlobalWeightedAvgPool2d(
+            encoder_params[encoder]["features"])
         self.dropout = Dropout(dropout_rate)
         self.fc = Linear(encoder_params[encoder]["features"], 1)
 
