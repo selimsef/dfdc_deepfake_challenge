@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import cv2
 import numpy as np
@@ -63,6 +64,22 @@ class VideoReader:
         result = self._read_frames_at_indices(path, capture, frame_idxs)
         capture.release()
         return result
+
+    def read_webcam_frames(self, path, num_frames):
+        assert num_frames > 0
+        frames = []
+        capture = cv2.VideoCapture(0)
+
+        Path("webcam_outputs/frames").mkdir(exist_ok=True)
+        for i in range(num_frames):
+            ret, frame = capture.read()
+            frames.append(frame)
+            cv2.imwrite(f'webcam_outputs/frames/{i}.png', frame)
+
+        frames = np.stack(arrays=frames, axis=0)
+        capture.release()
+
+        return frames, list(range(num_frames))
 
     def read_random_frames(self, path, num_frames, seed=None):
         """Picks the frame indices at random.
@@ -206,7 +223,8 @@ class VideoReader:
 
 
 class FaceExtractor:
-    def __init__(self, video_read_fn):
+    def __init__(self, video_read_fn, mode):
+        self.mode = mode
         device = "cuda" if torch.cuda.is_available() else "cpu"
         self.video_read_fn = video_read_fn
         self.detector = MTCNN(margin=0, thresholds=[
@@ -217,11 +235,14 @@ class FaceExtractor:
         frames_read = []
         frames = []
         results = []
+
         for video_idx in video_idxs:
             # Read the full-size frames from this video.
             filename = filenames[video_idx]
             video_path = os.path.join(input_dir, filename)
+
             result = self.video_read_fn(video_path)
+
             # Error? Then skip this video.
             if result is None:
                 continue
