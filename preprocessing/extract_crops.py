@@ -8,6 +8,7 @@ import json
 import os
 from os import cpu_count
 from pathlib import Path
+import face_recognition
 
 os.environ["MKL_NUM_THREADS"] = "1"
 os.environ["NUMEXPR_NUM_THREADS"] = "1"

@@ -90,4 +90,4 @@ if __name__ == '__main__':
     submission_df = pd.DataFrame(
         {"filename": test_videos, "label": predictions})
     submission_df.to_csv(args.output, index=False)
-    logger.info("Elapsed:", time.time() - stime)
+    logger.info(f"Elapsed: {time.time() - stime}")

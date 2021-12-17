@@ -10,6 +10,7 @@ from facenet_pytorch.models.mtcnn import MTCNN
 from concurrent.futures import ThreadPoolExecutor
 
 from torchvision.transforms import Normalize
+import face_recognition
 
 mean = [0.485, 0.456, 0.406]
 std = [0.229, 0.224, 0.225]
@@ -254,28 +255,42 @@ class FaceExtractor:
 
             frames.append(my_frames)
             frames_read.append(my_idxs)
+            Path("webcam_outputs/crops").mkdir(exist_ok=True)
             for i, frame in enumerate(my_frames):
                 h, w = frame.shape[:2]
                 img = Image.fromarray(frame.astype(np.uint8))
                 img = img.resize(size=[s // 2 for s in img.size])
 
-                batch_boxes, probs = self.detector.detect(img, landmarks=False)
+                # MTCNN
+                # batch_boxes, probs = self.detector.detect(img, landmarks=False)
+
+                # img_array = np.array(img)
+
+                batch_boxes = face_recognition.face_locations(np.array(img))
+                batch_boxes = [np.reshape(np.array(box, dtype=np.float32), (4, ))
+                               for box in batch_boxes]
 
                 faces = []
                 scores = []
-                if batch_boxes is None:
+                if batch_boxes is None or len(batch_boxes) == 0:
                     continue
-                for bbox, score in zip(batch_boxes, probs):
+                for bbox in batch_boxes:
                     if bbox is not None:
-                        xmin, ymin, xmax, ymax = [int(b * 2) for b in bbox]
+                        # MTCNN
+                        # xmin, ymin, xmax, ymax = [int(b * 2) for b in bbox]
+
+                        # face recognition
+                        ymin, xmax, ymax, xmin = [int(b * 2) for b in bbox]
                         w = xmax - xmin
                         h = ymax - ymin
                         p_h = h // 3
                         p_w = w // 3
                         crop = frame[max(ymin - p_h, 0):ymax +
                                      p_h, max(xmin - p_w, 0):xmax + p_w]
+
+                        cv2.imwrite(f"webcam_outputs/crops/{i}.jpg", crop)
                         faces.append(crop)
-                        scores.append(score)
+                        # scores.append(score)
 
                 frame_dict = {"video_idx": video_idx,
                               "frame_idx": my_idxs[i],
@@ -298,6 +313,7 @@ def confident_strategy(pred, t=0.8):
     pred = np.array(pred)
     sz = len(pred)
     fakes = np.count_nonzero(pred > t)
+
     # 11 frames are detected as fakes with high probability
     if fakes > sz // 2.5 and fakes > 11:
         return np.mean(pred[pred > t])
@@ -333,6 +349,11 @@ def isotropically_resize_image(img, size, interpolation_down=cv2.INTER_AREA, int
         w = w * scale
         h = size
     interpolation = interpolation_up if scale > 1 else interpolation_down
+    print("---resize---")
+    print(type(img))
+    print(img.shape)
+    print(h)
+    print(w)
     resized = cv2.resize(img, (int(w), int(h)), interpolation=interpolation)
     return resized
 
@@ -340,42 +361,44 @@ def isotropically_resize_image(img, size, interpolation_down=cv2.INTER_AREA, int
 def predict_on_video(face_extractor, video_path, batch_size, input_size, models, strategy=np.mean,
                      apply_compression=False):
     batch_size *= 4
-    try:
-        faces = face_extractor.process_video(video_path)
-        if len(faces) > 0:
-            x = np.zeros((batch_size, input_size, input_size, 3),
-                         dtype=np.uint8)
-            n = 0
-            for frame_data in faces:
-                for face in frame_data["faces"]:
-                    resized_face = isotropically_resize_image(face, input_size)
-                    resized_face = put_to_center(resized_face, input_size)
-                    if apply_compression:
-                        resized_face = image_compression(
-                            resized_face, quality=90, image_type=".jpg")
-                    if n + 1 < batch_size:
-                        x[n] = resized_face
-                        n += 1
-                    else:
-                        pass
-            if n > 0:
-                device = "cuda" if torch.cuda.is_available() else "cpu"
-                x = torch.tensor(x, device=device).float()
-                # Preprocess the images.
-                x = x.permute((0, 3, 1, 2))
-                for i in range(len(x)):
-                    x[i] = normalize_transform(x[i] / 255.)
-                # Make a prediction, then take the average.
-                with torch.no_grad():
-                    preds = []
-                    for model in models:
-                        y_pred = model(x[:n])
-                        y_pred = torch.sigmoid(y_pred.squeeze())
-                        bpred = y_pred[:n].cpu().numpy()
-                        preds.append(strategy(bpred))
-                    return np.mean(preds)
-    except Exception as e:
-        print("Prediction error on video %s: %s" % (video_path, str(e)))
+
+    # try:
+    faces = face_extractor.process_video(video_path)
+    print(f"faces: {len(faces)}")
+    if len(faces) > 0:
+        x = np.zeros((batch_size, input_size, input_size, 3),
+                     dtype=np.uint8)
+        n = 0
+        for frame_data in faces:
+            for face in frame_data["faces"]:
+                resized_face = isotropically_resize_image(face, input_size)
+                resized_face = put_to_center(resized_face, input_size)
+                if apply_compression:
+                    resized_face = image_compression(
+                        resized_face, quality=90, image_type=".jpg")
+                if n + 1 < batch_size:
+                    x[n] = resized_face
+                    n += 1
+                else:
+                    pass
+        if n > 0:
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+            x = torch.tensor(x, device=device).float()
+            # Preprocess the images.
+            x = x.permute((0, 3, 1, 2))
+            for i in range(len(x)):
+                x[i] = normalize_transform(x[i] / 255.)
+            # Make a prediction, then take the average.
+            with torch.no_grad():
+                preds = []
+                for model in models:
+                    y_pred = model(x[:n])
+                    y_pred = torch.sigmoid(y_pred.squeeze())
+                    bpred = y_pred[:n].cpu().numpy()
+                    preds.append(strategy(bpred))
+                return np.mean(preds)
+    # except Exception as e:
+    #     print("Prediction error on video %s: %s" % (video_path, str(e)))
 
     return 0.5
 

@@ -1,19 +1,20 @@
+import face_recognition
+from torch.utils.data import Dataset
+from facenet_pytorch.models.mtcnn import MTCNN
+from PIL import Image
+import cv2
+from typing import List
+from collections import OrderedDict
+from abc import ABC, abstractmethod
 import os
+import numpy as np
 os.environ["MKL_NUM_THREADS"] = "1"
 os.environ["NUMEXPR_NUM_THREADS"] = "1"
 os.environ["OMP_NUM_THREADS"] = "1"
 
-from abc import ABC, abstractmethod
-from collections import OrderedDict
-from typing import List
 
-import cv2
 cv2.ocl.setUseOpenCL(False)
 cv2.setNumThreads(0)
-
-from PIL import Image
-from facenet_pytorch.models.mtcnn import MTCNN
-from torch.utils.data import Dataset
 
 
 class VideoFaceDetector(ABC):
@@ -33,15 +34,44 @@ class VideoFaceDetector(ABC):
 
 class FacenetDetector(VideoFaceDetector):
 
-    def __init__(self, device="cuda:0") -> None:
+    def __init__(self, detector="MTCNN", device="cuda:0") -> None:
         super().__init__()
-        self.detector = MTCNN(margin=0,thresholds=[0.85, 0.95, 0.95], device=device)
+        self.detector_type = detector
+        if detector == "MTCNN":
+            self.detector = MTCNN(margin=0, thresholds=[
+                                  0.85, 0.95, 0.95], device=device)
+        if detector == "face_recognition":
+            self.detector = face_recognition
 
     def _detect_faces(self, frames) -> List:
-        batch_boxes, *_ = self.detector.detect(frames, landmarks=False)
+        batch_boxes = None
+        if self.detector_type == "MTCNN":
+            # print(len(frames))
+            # print(type(frames[0]))
+            # exit()
+            batch_boxes, *_ = self.detector.detect(frames, landmarks=False)
+            # print(batch_boxes.shape)
+            # exit()
+        if self.detector_type == "face_recognition":
+            results = []
+            for frame in frames:
+                batch_box = self.detector.face_locations(np.array(frame))
+                ymin, xmax, ymax, xmin = [b for b in batch_box[0]]
+                # print(batch_box)
+                # print(type(batch_box[0]))
+                batch_box[0] = (xmin, ymin, xmax, ymax)
+                # print(batch_box)
+                # print(type(batch_box[0]))
+                # exit()
+                print(batch_box)
+                results.append(batch_box)
+            batch_boxes = np.stack(results, axis=0)
+        #     print(batch_boxes.shape)
+        #     exit()
+        # exit()
         return [b.tolist() if b is not None else None for b in batch_boxes]
 
-    @property
+    @ property
     def _batch_size(self):
         return 32
 
