@@ -1,7 +1,9 @@
 *.csv
+*.jpg
 
 logs/
 data/
 model/
 weights/
 test_videos/
+webcam_outputs/
