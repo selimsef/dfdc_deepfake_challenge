@@ -8,6 +8,8 @@ from collections import OrderedDict
 from abc import ABC, abstractmethod
 import os
 import numpy as np
+from retinaface.pre_trained_models import get_model
+import time
 os.environ["MKL_NUM_THREADS"] = "1"
 os.environ["NUMEXPR_NUM_THREADS"] = "1"
 os.environ["OMP_NUM_THREADS"] = "1"
@@ -43,32 +45,37 @@ class FacenetDetector(VideoFaceDetector):
         if detector == "face_recognition":
             self.detector = face_recognition
 
+        if detector == "retinaface":
+            self.detector = get_model("resnet50_2020-07-20", max_size=2048)
+            self.detector.eval()
+
     def _detect_faces(self, frames) -> List:
         batch_boxes = None
         if self.detector_type == "MTCNN":
-            # print(len(frames))
-            # print(type(frames[0]))
-            # exit()
+            frames = frames[:1]
+            start = time.time()
             batch_boxes, *_ = self.detector.detect(frames, landmarks=False)
-            # print(batch_boxes.shape)
-            # exit()
+            print(f"time usage of a frame: {time.time()-start}s")
+            exit()
         if self.detector_type == "face_recognition":
             results = []
             for frame in frames:
                 batch_box = self.detector.face_locations(np.array(frame))
                 ymin, xmax, ymax, xmin = [b for b in batch_box[0]]
-                # print(batch_box)
-                # print(type(batch_box[0]))
                 batch_box[0] = (xmin, ymin, xmax, ymax)
-                # print(batch_box)
-                # print(type(batch_box[0]))
-                # exit()
-                print(batch_box)
                 results.append(batch_box)
             batch_boxes = np.stack(results, axis=0)
-        #     print(batch_boxes.shape)
-        #     exit()
-        # exit()
+
+        if self.detector_type == "retinaface":
+            results = []
+            for frame in frames:
+                start = time.time()
+                batch_box = self.detector.predict_jsons(np.array(frame))[0][
+                    "bbox"]
+                results.append(batch_box)
+                print(f"time usage of a frame: {time.time()-start}s")
+            batch_boxes = np.stack(results, axis=0)
+
         return [b.tolist() if b is not None else None for b in batch_boxes]
 
     @ property

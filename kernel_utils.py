@@ -8,9 +8,10 @@ from PIL import Image
 from albumentations.augmentations.functional import image_compression
 from facenet_pytorch.models.mtcnn import MTCNN
 from concurrent.futures import ThreadPoolExecutor
-
 from torchvision.transforms import Normalize
-import face_recognition
+
+from preprocessing.utils import landmark_alignment
+from preprocessing.retinaface.detect import FaceDetector
 
 mean = [0.485, 0.456, 0.406]
 std = [0.229, 0.224, 0.225]
@@ -224,12 +225,17 @@ class VideoReader:
 
 
 class FaceExtractor:
-    def __init__(self, video_read_fn, mode):
+    def __init__(self, video_read_fn, mode, detector_type):
         self.mode = mode
         device = "cuda" if torch.cuda.is_available() else "cpu"
         self.video_read_fn = video_read_fn
-        self.detector = MTCNN(margin=0, thresholds=[
-                              0.7, 0.8, 0.8], device=device)
+
+        if detector_type == "MTCNN":
+            self.detector = MTCNN(margin=0, thresholds=[
+                0.7, 0.8, 0.8], device=device)
+        if detector_type == "retinaface":
+            self.detector = FaceDetector(
+                network="mobile0.25", weights="./weights/retinaface/mobilenet0.25_Final.pth")
 
     def process_videos(self, input_dir, filenames, video_idxs):
         videos_read = []
@@ -264,9 +270,13 @@ class FaceExtractor:
                 # MTCNN
                 # batch_boxes, probs = self.detector.detect(img, landmarks=False)
 
-                # img_array = np.array(img)
+                img_array = np.array(img)
+                # img_array = landmark_alignment(img_array, None)
 
-                batch_boxes = face_recognition.face_locations(np.array(img))
+                annotations = self.detector.detect(
+                    np.array(img, dtype=np.float32), landmarks=True)
+
+                batch_boxes = annotations["bbox"]
                 batch_boxes = [np.reshape(np.array(box, dtype=np.float32), (4, ))
                                for box in batch_boxes]
 
@@ -280,7 +290,7 @@ class FaceExtractor:
                         # xmin, ymin, xmax, ymax = [int(b * 2) for b in bbox]
 
                         # face recognition
-                        ymin, xmax, ymax, xmin = [int(b * 2) for b in bbox]
+                        xmin, ymin, xmax, ymax = [int(b * 2) for b in bbox]
                         w = xmax - xmin
                         h = ymax - ymin
                         p_h = h // 3
@@ -349,11 +359,6 @@ def isotropically_resize_image(img, size, interpolation_down=cv2.INTER_AREA, int
         w = w * scale
         h = size
     interpolation = interpolation_up if scale > 1 else interpolation_down
-    print("---resize---")
-    print(type(img))
-    print(img.shape)
-    print(h)
-    print(w)
     resized = cv2.resize(img, (int(w), int(h)), interpolation=interpolation)
     return resized
 

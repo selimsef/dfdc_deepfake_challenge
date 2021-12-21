@@ -1,5 +1,6 @@
 import math
 import os
+from preprocessing.utils import landmark_alignment
 import random
 import sys
 import traceback
@@ -16,7 +17,9 @@ from skimage import measure
 from torch.utils.data import Dataset
 import dlib
 
+
 from training.datasets.validation_set import PUBLIC_SET
+from preprocessing.utils import landmark_alignment
 
 
 def prepare_bit_masks(mask):
@@ -275,8 +278,12 @@ class DeepFakeClassifierDataset(Dataset):
                     print("not found mask", diff_path)
                     pass
                 if self.mode == "train" and self.hardcore and not self.rotation:
+                    # cv2.imwrite("before.jpg", image)
                     landmark_path = os.path.join(
                         self.data_root, "landmarks", ori_video, img_file[:-4] + ".npy")
+                    image = landmark_alignment(
+                        image=image, landmark_path=landmark_path)
+
                     if os.path.exists(landmark_path) and random.random() < 0.7:
                         landmarks = np.load(landmark_path)
                         image = remove_landmark(image, landmarks)
@@ -295,6 +302,16 @@ class DeepFakeClassifierDataset(Dataset):
                                 image *= np.expand_dims(bitmap_msk, axis=-1)
                                 break
                             current_try += 1
+
+                    # cv2.imwrite("before.jpg", image)
+                    # print(image.shape)
+                    # image = landmark_alignment(
+                    #     image=image, landmark_path=landmark_path)
+                    # print(image.shape)
+
+                    # cv2.imwrite("after.jpg", image)
+                    # exit()
+
                 if self.mode == "train" and self.padding_part > 3:
                     image = change_padding(image, self.padding_part)
                 valid_label = np.count_nonzero(
@@ -326,6 +343,7 @@ class DeepFakeClassifierDataset(Dataset):
                         "valid": valid_label, "rotations": rotation}
             except Exception as e:
                 traceback.print_exc(file=sys.stdout)
+
                 print("Broken image", os.path.join(
                     self.data_root, self.crops_dir, video, img_file))
                 index = random.randint(0, len(self.data) - 1)

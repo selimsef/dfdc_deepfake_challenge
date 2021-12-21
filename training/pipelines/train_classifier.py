@@ -93,7 +93,7 @@ def main():
     parser = argparse.ArgumentParser("PyTorch Xview Pipeline")
     arg = parser.add_argument
     arg('--config', metavar='CONFIG_FILE', help='path to configuration file')
-    arg('--workers', type=int, default=6, help='number of cpu threads to use')
+    arg('--workers', type=int, default=0, help='number of cpu threads to use')
     arg('--gpu', type=str, default='0',
         help='List of GPUs for parallel training, e.g. 0,1,2,3')
     arg('--output-dir', type=str, default='weights/')

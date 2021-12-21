@@ -20,7 +20,7 @@ def parse_args():
         description="Process a original videos with face detector")
     parser.add_argument("--root-dir", help="root directory")
     parser.add_argument(
-        "--detector", help="choose a detector", default="face_recognition")
+        "--detector", help="choose a detector", default="MTCNN")
     parser.add_argument("--detector-type", help="type of the detector", default="FacenetDetector",
                         choices=["FacenetDetector"])
     args = parser.parse_args()
@@ -39,7 +39,7 @@ def process_videos(videos, root_dir, select_detector, detector_cls: Type[VideoFa
         id = os.path.splitext(os.path.basename(video))[0]
         batches = [frames[i:i + detector._batch_size]
                    for i in range(0, len(frames), detector._batch_size)]
-        print(id)
+
         for j, frames in enumerate(batches):
             result.update({int(j * detector._batch_size) + i: b for i,
                            b in zip(indices, detector._detect_faces(frames))})

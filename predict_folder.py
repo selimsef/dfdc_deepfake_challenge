@@ -69,7 +69,8 @@ if __name__ == '__main__':
 
     face_extractor = FaceExtractor(
         video_read_fn=video_read_fn,
-        mode="webcam" if args.webcam else "video"
+        mode="webcam" if args.webcam else "video",
+        detector_type="retinaface"
     )
     input_size = 380
     strategy = confident_strategy
