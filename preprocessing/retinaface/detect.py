@@ -211,7 +211,7 @@ class FaceDetector():
 
         # save image
         name = "test.jpg"
-        cv2.imwrite(name, img_raw)
+        cv2.imwrite(f"webcam_outputs/crops/{name}", img_raw)
 
 
 # if __name__ == '__main__':

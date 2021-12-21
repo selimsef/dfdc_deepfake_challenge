@@ -1,4 +1,5 @@
 import os
+import datetime
 from pathlib import Path
 
 import cv2
@@ -76,7 +77,17 @@ class VideoReader:
         for i in range(num_frames):
             ret, frame = capture.read()
             frames.append(frame)
-            cv2.imwrite(f'webcam_outputs/frames/{i}.png', frame)
+            # cv2.imshow(f'webcam_outputs/frames/{i}.png', frame)
+
+            # if len(frame_list) >= 32:
+            #     frame_list = sorted(
+            #         list(Path("webcam_outputs/frames").glob("**/*.png")), key=lambda x: x.stem)
+            #     frame_list[0].unlink()
+            #     cv2.imwrite(
+            #         f'webcam_outputs/frames/{datetime.datetime.now()}.png', frame)
+            # else:
+            #     cv2.imwrite(
+            #         f'webcam_outputs/frames/{datetime.datetime.now()}.png', frame)
 
         frames = np.stack(arrays=frames, axis=0)
         capture.release()
@@ -261,7 +272,7 @@ class FaceExtractor:
 
             frames.append(my_frames)
             frames_read.append(my_idxs)
-            Path("webcam_outputs/crops").mkdir(exist_ok=True)
+            # Path("webcam_outputs/crops").mkdir(exist_ok=True)
             for i, frame in enumerate(my_frames):
                 h, w = frame.shape[:2]
                 img = Image.fromarray(frame.astype(np.uint8))
@@ -298,7 +309,7 @@ class FaceExtractor:
                         crop = frame[max(ymin - p_h, 0):ymax +
                                      p_h, max(xmin - p_w, 0):xmax + p_w]
 
-                        cv2.imwrite(f"webcam_outputs/crops/{i}.jpg", crop)
+                        # cv2.imwrite(f"webcam_outputs/crops/{i}.jpg", crop)
                         faces.append(crop)
                         # scores.append(score)
 
@@ -399,13 +410,15 @@ def predict_on_video(face_extractor, video_path, batch_size, input_size, models,
                 for model in models:
                     y_pred = model(x[:n])
                     y_pred = torch.sigmoid(y_pred.squeeze())
-                    bpred = y_pred[:n].cpu().numpy()
-                    preds.append(strategy(bpred))
-                return np.mean(preds)
+                    # bpred = y_pred[:n].cpu().numpy()
+                    # preds.append(strategy(bpred))
+                # return np.mean(preds), faces[0]
+                return [y_pred.item()], faces[0]
+
     # except Exception as e:
     #     print("Prediction error on video %s: %s" % (video_path, str(e)))
 
-    return 0.5
+    return [0.5], faces[0]
 
 
 def predict_on_video_set(face_extractor, videos, input_size, num_workers, test_dir, frames_per_video, models,
@@ -413,12 +426,12 @@ def predict_on_video_set(face_extractor, videos, input_size, num_workers, test_d
                          apply_compression=False):
     def process_file(i):
         filename = videos[i]
-        y_pred = predict_on_video(face_extractor=face_extractor, video_path=os.path.join(test_dir, filename),
-                                  input_size=input_size,
-                                  batch_size=frames_per_video,
-                                  models=models, strategy=strategy, apply_compression=apply_compression)
-        return y_pred
+        y_pred, img = predict_on_video(face_extractor=face_extractor, video_path=os.path.join(test_dir, filename),
+                                       input_size=input_size,
+                                       batch_size=frames_per_video,
+                                       models=models, strategy=strategy, apply_compression=apply_compression)
+        return y_pred, img
 
-    with ThreadPoolExecutor(max_workers=num_workers) as ex:
-        predictions = ex.map(process_file, range(len(videos)))
-    return list(predictions)
+    predictions, img = process_file(0)
+    # print(predictions)
+    return list(predictions), img
