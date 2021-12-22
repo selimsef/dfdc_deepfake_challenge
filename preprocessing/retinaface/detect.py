@@ -185,9 +185,9 @@ class FaceDetector():
                    "landmark": landms, "confid": out_confids}
 
         dets = np.concatenate((dets, landms), axis=1)
-        self.draw(dets, img_raw)
+        drawed = self.draw(dets, img_raw)
 
-        return results
+        return results, drawed
 
     def draw(self, dets, img_raw):
         for b in dets:
@@ -210,9 +210,10 @@ class FaceDetector():
             cv2.circle(img_raw, (b[13], b[14]), 1, (255, 0, 0), 4)
 
         # save image
-        name = "test.jpg"
-        cv2.imwrite(f"webcam_outputs/crops/{name}", img_raw)
-
+        # name = "test.jpg"
+        # cv2.imwrite(name, img_raw)
+        img_raw = np.asarray(img_raw, dtype=np.uint8)
+        return img_raw
 
 # if __name__ == '__main__':
 #     # testing begin

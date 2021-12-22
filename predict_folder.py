@@ -90,14 +90,15 @@ if __name__ == '__main__':
         logger.info("Predicting {} videos".format(len(test_videos)))
 
     while True:
-        predictions, img = predict_on_video_set(face_extractor=face_extractor, input_size=input_size, models=models,
-                                                strategy=strategy, frames_per_video=frames_per_video, videos=test_videos,
-                                                num_workers=6, test_dir=args.test_dir)
+        predictions, drawed_img = predict_on_video_set(face_extractor=face_extractor, input_size=input_size, models=models,
+                                                       strategy=strategy, frames_per_video=frames_per_video, videos=test_videos,
+                                                       num_workers=6, test_dir=args.test_dir)
+        # print(drawed_img)
 
-        cv2.imshow("webcam", img["faces"][0])
+        cv2.imwrite("test.jpg", drawed_img)
+        cv2.imshow("webcam", drawed_img)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
-        time.sleep(1)
 
     submission_df = pd.DataFrame(
         {"filename": test_videos, "label": predictions})

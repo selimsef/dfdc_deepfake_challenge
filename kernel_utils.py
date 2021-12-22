@@ -284,7 +284,7 @@ class FaceExtractor:
                 img_array = np.array(img)
                 # img_array = landmark_alignment(img_array, None)
 
-                annotations = self.detector.detect(
+                annotations, drawed_img = self.detector.detect(
                     np.array(img, dtype=np.float32), landmarks=True)
 
                 batch_boxes = annotations["bbox"]
@@ -321,13 +321,14 @@ class FaceExtractor:
                               "scores": scores}
                 results.append(frame_dict)
 
-        return results
+        return results, drawed_img
 
     def process_video(self, video_path):
         """Convenience method for doing face extraction on a single video."""
         input_dir = os.path.dirname(video_path)
         filenames = [os.path.basename(video_path)]
-        return self.process_videos(input_dir, filenames, [0])
+        results, drawed_img = self.process_videos(input_dir, filenames, [0])
+        return results, drawed_img
 
 
 def confident_strategy(pred, t=0.8):
@@ -379,7 +380,7 @@ def predict_on_video(face_extractor, video_path, batch_size, input_size, models,
     batch_size *= 4
 
     # try:
-    faces = face_extractor.process_video(video_path)
+    faces, drawed_img = face_extractor.process_video(video_path)
     print(f"faces: {len(faces)}")
     if len(faces) > 0:
         x = np.zeros((batch_size, input_size, input_size, 3),
@@ -413,12 +414,12 @@ def predict_on_video(face_extractor, video_path, batch_size, input_size, models,
                     # bpred = y_pred[:n].cpu().numpy()
                     # preds.append(strategy(bpred))
                 # return np.mean(preds), faces[0]
-                return [y_pred.item()], faces[0]
+                return [y_pred.item()], drawed_img
 
     # except Exception as e:
     #     print("Prediction error on video %s: %s" % (video_path, str(e)))
 
-    return [0.5], faces[0]
+    return [0.5], drawed_img
 
 
 def predict_on_video_set(face_extractor, videos, input_size, num_workers, test_dir, frames_per_video, models,
@@ -426,12 +427,12 @@ def predict_on_video_set(face_extractor, videos, input_size, num_workers, test_d
                          apply_compression=False):
     def process_file(i):
         filename = videos[i]
-        y_pred, img = predict_on_video(face_extractor=face_extractor, video_path=os.path.join(test_dir, filename),
-                                       input_size=input_size,
-                                       batch_size=frames_per_video,
-                                       models=models, strategy=strategy, apply_compression=apply_compression)
-        return y_pred, img
+        y_pred, drawed_img = predict_on_video(face_extractor=face_extractor, video_path=os.path.join(test_dir, filename),
+                                              input_size=input_size,
+                                              batch_size=frames_per_video,
+                                              models=models, strategy=strategy, apply_compression=apply_compression)
+        return y_pred, drawed_img
 
-    predictions, img = process_file(0)
+    predictions, drawed_img = process_file(0)
     # print(predictions)
-    return list(predictions), img
+    return list(predictions), drawed_img
