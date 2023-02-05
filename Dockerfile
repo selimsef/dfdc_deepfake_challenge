@@ -23,7 +23,7 @@ RUN apt-get update && apt-get install -y libglib2.0-0 libsm6 libxrender-dev libx
 RUN conda install cython -y && conda clean --all
 
 # Installing APEX
-RUN pip3 install -U pip3
+RUN pip install -U pip
 RUN git clone https://github.com/NVIDIA/apex
 RUN sed -i 's/check_cuda_torch_binary_vs_bare_metal(torch.utils.cpp_extension.CUDA_HOME)/pass/g' apex/setup.py
 RUN pip3 install packaging
