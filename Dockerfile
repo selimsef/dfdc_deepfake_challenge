@@ -12,7 +12,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Europe/Berlin
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-RUN apt-get update && apt-get install -y libglib2.0-0 libsm6 libxrender-dev libxext6 nano mc glances vim git \
+RUN apt-get update && apt-get install -y  vim git \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
