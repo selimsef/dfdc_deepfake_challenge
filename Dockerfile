@@ -23,17 +23,17 @@ RUN apt-get update && apt-get install -y libglib2.0-0 libsm6 libxrender-dev libx
 RUN conda install cython -y && conda clean --all
 
 # Installing APEX
-RUN pip install -U pip
+RUN pip3 install -U pip3
 RUN git clone https://github.com/NVIDIA/apex
 RUN sed -i 's/check_cuda_torch_binary_vs_bare_metal(torch.utils.cpp_extension.CUDA_HOME)/pass/g' apex/setup.py
-RUN pip install packaging
-RUN pip install -v --no-cache-dir --global-option="--cpp_ext" --global-option="--cuda_ext"  ./apex
+RUN pip3 install packaging
+RUN pip3 install -v --no-cache-dir --global-option="--cpp_ext" --global-option="--cuda_ext"  ./apex
 RUN apt-get update -y
 RUN apt-get install build-essential cmake -y
 RUN apt-get install libopenblas-dev liblapack-dev -y
 RUN apt-get install libx11-dev libgtk-3-dev -y
-RUN pip install dlib
-RUN pip install facenet-pytorch
+RUN pip3 install dlib
+RUN pip3 install facenet-pytorch
 RUN pip install albumentations==1.0.0 timm==0.4.12 pytorch_toolbelt tensorboardx
 RUN pip install cython jupyter  jupyterlab ipykernel matplotlib tqdm pandas
 
