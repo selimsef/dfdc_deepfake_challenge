@@ -106,7 +106,7 @@ def main():
         fold_data.append([video, file, label, ori_vid, int(file.split("_")[0]), video_fold[video]])
     random.shuffle(fold_data)
     pd.DataFrame(fold_data, columns=["video", "file", "label", "original", "frame", "fold"]).to_csv(args.out, index=False)
-    print(args.output)
+    print(args.out)
 
 
 if __name__ == "__main__":
