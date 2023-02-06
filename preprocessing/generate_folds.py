@@ -104,7 +104,7 @@ def main():
         file = path.name
         assert video_fold[video] == video_fold[ori_vid], "original video and fake have leak  {} {}".format(ori_vid, video)
         fold_data.append([video, file, label, ori_vid, int(file.split("_")[0]), video_fold[video]])
-        import ipab
+        import ipdb
 
         ipdb.set_trace()
     random.shuffle(fold_data)
