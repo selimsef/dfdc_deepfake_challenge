@@ -44,8 +44,7 @@ def get_paths(vid, label, root_dir):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(
-        description="Generate Folds")
+    parser = argparse.ArgumentParser(description="Generate Folds")
     parser.add_argument("--root-dir", help="root directory", default="/mnt/sota/datasets/deepfake")
     parser.add_argument("--out", type=str, default="folds02.csv", help="CSV file to save")
     parser.add_argument("--seed", type=int, default=777, help="Seed to split, default 777")
@@ -103,12 +102,12 @@ def main():
         path = Path(img_path)
         video = path.parent.name
         file = path.name
-        assert video_fold[video] == video_fold[ori_vid], "original video and fake have leak  {} {}".format(ori_vid,
-                                                                                                           video)
+        assert video_fold[video] == video_fold[ori_vid], "original video and fake have leak  {} {}".format(ori_vid, video)
         fold_data.append([video, file, label, ori_vid, int(file.split("_")[0]), video_fold[video]])
     random.shuffle(fold_data)
     pd.DataFrame(fold_data, columns=["video", "file", "label", "original", "frame", "fold"]).to_csv(args.out, index=False)
+    print(args.output)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
