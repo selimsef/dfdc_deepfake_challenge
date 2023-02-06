@@ -3,7 +3,9 @@ import random
 import cv2
 import numpy as np
 from albumentations import DualTransform, ImageOnlyTransform
-from albumentations.augmentations.functional import crop
+
+# from albumentations.augmentations.functional import crop
+from albumentations.augmentations.crops.transforms import Crop
 
 
 def isotropically_resize_image(img, size, interpolation_down=cv2.INTER_AREA, interpolation_up=cv2.INTER_CUBIC):
@@ -24,16 +26,14 @@ def isotropically_resize_image(img, size, interpolation_down=cv2.INTER_AREA, int
 
 
 class IsotropicResize(DualTransform):
-    def __init__(self, max_side, interpolation_down=cv2.INTER_AREA, interpolation_up=cv2.INTER_CUBIC,
-                 always_apply=False, p=1):
+    def __init__(self, max_side, interpolation_down=cv2.INTER_AREA, interpolation_up=cv2.INTER_CUBIC, always_apply=False, p=1):
         super(IsotropicResize, self).__init__(always_apply, p)
         self.max_side = max_side
         self.interpolation_down = interpolation_down
         self.interpolation_up = interpolation_up
 
     def apply(self, img, interpolation_down=cv2.INTER_AREA, interpolation_up=cv2.INTER_CUBIC, **params):
-        return isotropically_resize_image(img, size=self.max_side, interpolation_down=interpolation_down,
-                                          interpolation_up=interpolation_up)
+        return isotropically_resize_image(img, size=self.max_side, interpolation_down=interpolation_down, interpolation_up=interpolation_up)
 
     def apply_to_mask(self, img, **params):
         return self.apply(img, interpolation_down=cv2.INTER_NEAREST, interpolation_up=cv2.INTER_NEAREST, **params)
@@ -50,13 +50,11 @@ class Resize4xAndBack(ImageOnlyTransform):
         h, w = img.shape[:2]
         scale = random.choice([2, 4])
         img = cv2.resize(img, (w // scale, h // scale), interpolation=cv2.INTER_AREA)
-        img = cv2.resize(img, (w, h),
-                         interpolation=random.choice([cv2.INTER_CUBIC, cv2.INTER_LINEAR, cv2.INTER_NEAREST]))
+        img = cv2.resize(img, (w, h), interpolation=random.choice([cv2.INTER_CUBIC, cv2.INTER_LINEAR, cv2.INTER_NEAREST]))
         return img
 
 
 class RandomSizedCropNonEmptyMaskIfExists(DualTransform):
-
     def __init__(self, min_max_height, w2h_ratio=[0.7, 1.3], always_apply=False, p=0.5):
         super(RandomSizedCropNonEmptyMaskIfExists, self).__init__(always_apply, p)
 
@@ -64,7 +62,7 @@ class RandomSizedCropNonEmptyMaskIfExists(DualTransform):
         self.w2h_ratio = w2h_ratio
 
     def apply(self, img, x_min=0, x_max=0, y_min=0, y_max=0, **params):
-        cropped = crop(img, x_min, y_min, x_max, y_max)
+        cropped = Crop(img, x_min, y_min, x_max, y_max)
         return cropped
 
     @property
