@@ -75,6 +75,9 @@ def main():
                     for k, v in metadata.items():
                         fold = None
                         for i, fold_dirs in enumerate(folds):
+                            import ipdb
+
+                            ipdb.set_trace()
                             if part in fold_dirs:
                                 fold = i
                                 break
