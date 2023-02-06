@@ -4,7 +4,7 @@ import os
 os.environ["MKL_NUM_THREADS"] = "1"
 os.environ["NUMEXPR_NUM_THREADS"] = "1"
 os.environ["OMP_NUM_THREADS"] = "1"
-from skimage.measure import structural_similarity
+from skimage.metrics import structural_similarity
 
 from functools import partial
 from multiprocessing.pool import Pool
