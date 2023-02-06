@@ -75,15 +75,15 @@ def main():
                     for k, v in metadata.items():
                         fold = None
                         for i, fold_dirs in enumerate(folds):
-                            import ipdb
-
-                            ipdb.set_trace()
                             if part in fold_dirs:
                                 fold = i
                                 break
                         assert fold is not None
                         video_id = k[:-4]
                         video_fold[video_id] = fold
+    import ipdb
+
+    ipdb.set_trace()
     for fold in range(len(folds)):
         holdoutset = {k for k, v in video_fold.items() if v == fold}
         trainset = {k for k, v in video_fold.items() if v != fold}
