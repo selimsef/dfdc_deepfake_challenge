@@ -64,7 +64,7 @@ def main():
     print(folds)
     video_fold = {}
     for d in os.listdir(args.root_dir):
-        if "train_sample_videos" in d:
+        if "sample" in d:
             part = int(d.split("_")[-1])
             for f in os.listdir(os.path.join(args.root_dir, d)):
                 if "metadata.json" in f:
