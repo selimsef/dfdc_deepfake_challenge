@@ -13,11 +13,9 @@ from preprocessing.utils import get_original_video_paths
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(
-        description="Process a original videos with face detector")
+    parser = argparse.ArgumentParser(description="Process a original videos with face detector")
     parser.add_argument("--root-dir", help="root directory")
-    parser.add_argument("--detector-type", help="type of the detector", default="FacenetDetector",
-                        choices=["FacenetDetector"])
+    parser.add_argument("--detector-type", help="type of the detector", default="FacenetDetector", choices=["FacenetDetector"])
     args = parser.parse_args()
     return args
 
@@ -29,9 +27,9 @@ def process_videos(videos, root_dir, detector_cls: Type[VideoFaceDetector]):
     for item in tqdm(loader):
         result = {}
         video, indices, frames = item[0]
-        batches = [frames[i:i + detector._batch_size] for i in range(0, len(frames), detector._batch_size)]
+        batches = [frames[i : i + detector._batch_size] for i in range(0, len(frames), detector._batch_size)]
         for j, frames in enumerate(batches):
-            result.update({int(j * detector._batch_size) + i : b for i, b in zip(indices, detector._detect_faces(frames))})
+            result.update({int(j * detector._batch_size) + i: b for i, b in zip(indices, detector._detect_faces(frames))})
         id = os.path.splitext(os.path.basename(video))[0]
         out_dir = os.path.join(root_dir, "boxes")
         os.makedirs(out_dir, exist_ok=True)
@@ -39,11 +37,10 @@ def process_videos(videos, root_dir, detector_cls: Type[VideoFaceDetector]):
             json.dump(result, f)
 
 
-
-
 def main():
     args = parse_args()
     originals = get_original_video_paths(args.root_dir)
+    print(originals)
     process_videos(originals, args.root_dir, args.detector_type)
 
 
