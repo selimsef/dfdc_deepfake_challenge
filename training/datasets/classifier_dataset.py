@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 import skimage.draw
 from albumentations import ImageCompression, OneOf, GaussianBlur, Blur
-from albumentations.augmentations.functional import image_compression, rot90
+from albumentations.augmentations.functional import image_compression  # , rot90
 from albumentations.pytorch.functional import img_to_tensor
 from scipy.ndimage import binary_erosion, binary_dilation
 from skimage import measure
@@ -48,7 +48,7 @@ def prepare_bit_masks(mask):
 
 
 detector = dlib.get_frontal_face_detector()
-predictor = dlib.shape_predictor('libs/shape_predictor_68_face_landmarks.dat')
+predictor = dlib.shape_predictor("libs/shape_predictor_68_face_landmarks.dat")
 
 
 def blackout_convex_hull(img):
@@ -143,7 +143,7 @@ def change_padding(image, part=5):
     # original padding was done with 1/3 from each side, too much
     pad_h = int(((3 / 5) * h) / part)
     pad_w = int(((3 / 5) * w) / part)
-    image = image[h // 5 - pad_h:-h // 5 + pad_h, w // 5 - pad_w:-w // 5 + pad_w]
+    image = image[h // 5 - pad_h : -h // 5 + pad_h, w // 5 - pad_w : -w // 5 + pad_w]
     return image
 
 
@@ -170,8 +170,7 @@ def blackout_random(image, mask, label):
             else:
                 bitmap_msk[:, pivot:] = 0
 
-        if label < 0.5 and np.count_nonzero(image * np.expand_dims(bitmap_msk, axis=-1)) / 3 > (h * w) / 5 \
-                or np.count_nonzero(binary_mask * bitmap_msk) > 40:
+        if label < 0.5 and np.count_nonzero(image * np.expand_dims(bitmap_msk, axis=-1)) / 3 > (h * w) / 5 or np.count_nonzero(binary_mask * bitmap_msk) > 40:
             mask *= bitmap_msk
             image *= np.expand_dims(bitmap_msk, axis=-1)
             break
@@ -215,23 +214,22 @@ def blend_original(img):
 
 
 class DeepFakeClassifierDataset(Dataset):
-
-    def __init__(self,
-                 data_path="/mnt/sota/datasets/deepfake",
-                 fold=0,
-                 label_smoothing=0.01,
-                 padding_part=3,
-                 hardcore=True,
-                 crops_dir="crops",
-                 folds_csv="folds.csv",
-                 normalize={"mean": [0.485, 0.456, 0.406],
-                            "std": [0.229, 0.224, 0.225]},
-                 rotation=False,
-                 mode="train",
-                 reduce_val=True,
-                 oversample_real=True,
-                 transforms=None
-                 ):
+    def __init__(
+        self,
+        data_path="/mnt/sota/datasets/deepfake",
+        fold=0,
+        label_smoothing=0.01,
+        padding_part=3,
+        hardcore=True,
+        crops_dir="crops",
+        folds_csv="folds.csv",
+        normalize={"mean": [0.485, 0.456, 0.406], "std": [0.229, 0.224, 0.225]},
+        rotation=False,
+        mode="train",
+        reduce_val=True,
+        oversample_real=True,
+        transforms=None,
+    ):
         super().__init__()
         self.data_root = data_path
         self.fold = fold
@@ -307,13 +305,16 @@ class DeepFakeClassifierDataset(Dataset):
                 # os.makedirs("../images", exist_ok=True)
                 # cv2.imwrite(os.path.join("../images", video+ "_" + str(1 if label > 0.5 else 0) + "_"+img_file), image[...,::-1])
 
+                def rot90(img: np.ndarray, factor: int) -> np.ndarray:
+                    img = np.rot90(img, factor)
+                    return np.ascontiguousarray(img)
+
                 if self.mode == "train" and self.rotation:
                     rotation = random.randint(0, 3)
                     image = rot90(image, rotation)
 
                 image = img_to_tensor(image, self.normalize)
-                return {"image": image, "labels": np.array((label,)), "img_name": os.path.join(video, img_file),
-                        "valid": valid_label, "rotations": rotation}
+                return {"image": image, "labels": np.array((label,)), "img_name": os.path.join(video, img_file), "valid": valid_label, "rotations": rotation}
             except Exception as e:
                 traceback.print_exc(file=sys.stdout)
                 print("Broken image", os.path.join(self.data_root, self.crops_dir, video, img_file))
@@ -359,10 +360,9 @@ class DeepFakeClassifierDataset(Dataset):
             # every 2nd frame, to speed up validation
             rows = rows[rows["frame"] % 20 == 0]
             # another option is to use public validation set
-            #rows = rows[rows["video"].isin(PUBLIC_SET)]
+            # rows = rows[rows["video"].isin(PUBLIC_SET)]
 
-        print(
-            "real {} fakes {} mode {}".format(len(rows[rows["label"] == 0]), len(rows[rows["label"] == 1]), self.mode))
+        print("real {} fakes {} mode {}".format(len(rows[rows["label"] == 0]), len(rows[rows["label"] == 1]), self.mode))
         data = rows.values
 
         np.random.seed(seed)
