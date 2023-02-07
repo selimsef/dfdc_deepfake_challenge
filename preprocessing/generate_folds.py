@@ -57,7 +57,7 @@ def parse_args():
 def main():
     args = parse_args()
     ori_fakes = get_original_with_fakes(args.root_dir)
-    sz = 50 // args.n_splits
+    sz = 5 // args.n_splits
     folds = []
     for fold in range(args.n_splits):
         folds.append(list(range(sz * fold, sz * fold + sz if fold < args.n_splits - 1 else 50)))
