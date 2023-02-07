@@ -64,7 +64,7 @@ def main():
     print(folds)
     video_fold = {}
     for d in os.listdir(args.root_dir):
-        if "sample" in d:
+        if "dfdc" in d:
             print(d)
             part = int(d.split("_")[-1])
             for f in os.listdir(os.path.join(args.root_dir, d)):
