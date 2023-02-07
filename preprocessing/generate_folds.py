@@ -48,7 +48,7 @@ def parse_args():
     parser.add_argument("--root-dir", help="root directory", default="/mnt/sota/datasets/deepfake")
     parser.add_argument("--out", type=str, default="folds02.csv", help="CSV file to save")
     parser.add_argument("--seed", type=int, default=777, help="Seed to split, default 777")
-    parser.add_argument("--n_splits", type=int, default=16, help="Num folds, default 10")
+    parser.add_argument("--n_splits", type=int, default=2, help="Num folds, default 10")
     args = parser.parse_args()
 
     return args
@@ -60,7 +60,7 @@ def main():
     sz = 5 // args.n_splits
     folds = []
     for fold in range(args.n_splits):
-        folds.append(list(range(sz * fold, sz * fold + sz if fold < args.n_splits - 1 else 50)))
+        folds.append(list(range(sz * fold, sz * fold + sz if fold < args.n_splits - 1 else 5)))
     print(folds)
     video_fold = {}
     for d in os.listdir(args.root_dir):
