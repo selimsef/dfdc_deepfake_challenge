@@ -189,8 +189,8 @@ def main():
         model = DataParallel(model).cuda()
 
     # mlops init
-    # wandb.init(project="dfdc-deepfake-detection", entity="greenteaboom")
-    # wandb.config = {"annotate": "vanilla", "epochs": max_epochs, "batch_size": 128}
+    wandb.init(project="dfdc-deepfake-detection", entity="greenteaboom")
+    wandb.config = {"annotate": "vanilla", "epochs": max_epochs, "batch_size": 128}
 
     data_val.reset(1, args.seed)
     max_epochs = conf["optimizer"]["schedule"]["epochs"]
@@ -300,12 +300,15 @@ def validate(net, data_loader, prefix=""):
     x = np.array(data_x)
     fake_idx = y > 0.1
     real_idx = y < 0.1
+    prediction = x > 0.5
+    valid_accuracy = np.sum((prediction == y))
+
     fake_loss = log_loss(y[fake_idx], x[fake_idx], labels=[0, 1])
     real_loss = log_loss(y[real_idx], x[real_idx], labels=[0, 1])
     print("{}fake_loss".format(prefix), fake_loss)
     print("{}real_loss".format(prefix), real_loss)
 
-    # wandb.log({"val_fake_loss": fake_loss, "val_real_loss": real_loss, "val_loss": (fake_loss + real_loss) / 2})
+    wandb.log({"val_fake_loss": fake_loss, "val_real_loss": real_loss, "val_loss": (fake_loss + real_loss) / 2, "val_accuracy": valid_accuracy})
 
     return (fake_loss + real_loss) / 2, probs, targets
 
@@ -352,7 +355,7 @@ def train_epoch(current_epoch, loss_functions, model, optimizer, scheduler, trai
 
         optimizer.zero_grad()
         pbar.set_postfix({"lr": float(scheduler.get_lr()[-1]), "epoch": current_epoch, "loss": losses.avg, "fake_loss": fake_losses.avg, "real_loss": real_losses.avg})
-        # wandb.log({"fake_loss": fake_loss, "real_loss": real_loss, "loss": (fake_loss + real_loss) / 2})
+        wandb.log({"fake_loss": fake_loss, "real_loss": real_loss, "loss": (fake_loss + real_loss) / 2})
 
         if conf["fp16"]:
             with amp.scale_loss(loss, optimizer) as scaled_loss:
