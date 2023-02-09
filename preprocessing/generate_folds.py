@@ -60,7 +60,7 @@ def main():
     sz = 10 // args.n_splits
     folds = []
     for fold in range(args.n_splits):
-        folds.append(list(range(sz * fold, sz * fold + sz if fold < args.n_splits - 1 else 5)))
+        folds.append(list(range(sz * fold, sz * fold + sz if fold < args.n_splits - 1 else 10)))
     print(folds)
     video_fold = {}
     for d in os.listdir(args.root_dir):
