@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 import wandb
+import vessl
 from collections import defaultdict
 
 from sklearn.metrics import log_loss
@@ -191,9 +192,12 @@ def main():
     data_val.reset(1, args.seed)
     max_epochs = conf["optimizer"]["schedule"]["epochs"]
     # mlops init
-    wandb.init(project="dfdc-deepfake-detection", entity="greenteaboom")
-    wandb.config = {"annotate": "vanilla-gpu2", "epochs": max_epochs, "batch_size": 12}
-    wandb.run.name = "vanilla-gpu2"
+    if args.local_rank == 0:
+        wandb.init(project="dfdc-deepfake-detection", entity="greenteaboom")
+        wandb.config = {"annotate": "0210-dfdc-vanilla", "epochs": max_epochs, "batch_size": batch_size}
+        wandb.run.name = "0210-dfdc-vanilla"
+
+        vessl.init(organization="greentea", project="dfdc-deepfake-detection")
     for epoch in range(start_epoch, max_epochs):
         data_train.reset(epoch, args.seed)
         train_sampler = None
@@ -241,7 +245,7 @@ def evaluate_val(args, data_val, bce_best, model, snapshot_name, current_epoch, 
     print("Test phase")
     model = model.eval()
 
-    bce, probs, targets = validate(model, data_loader=data_val)
+    bce, probs, targets = validate(model, data_loader=data_val, epoch=current_epoch, local_rank=args.local_rank)
     if args.local_rank == 0:
         summary_writer.add_scalar("val/bce", float(bce), global_step=current_epoch)
         if bce < bce_best:
@@ -270,7 +274,7 @@ def evaluate_val(args, data_val, bce_best, model, snapshot_name, current_epoch, 
     return bce_best
 
 
-def validate(net, data_loader, prefix=""):
+def validate(net, data_loader, prefix="", epoch=-1, local_rank=-1):
     probs = defaultdict(list)
     targets = defaultdict(list)
 
@@ -301,14 +305,16 @@ def validate(net, data_loader, prefix=""):
     fake_idx = y > 0.1
     real_idx = y < 0.1
     prediction = x > 0.5
-    valid_accuracy = np.sum((prediction == y))
+    valid_accuracy = np.average((prediction == y))
 
     fake_loss = log_loss(y[fake_idx], x[fake_idx], labels=[0, 1])
     real_loss = log_loss(y[real_idx], x[real_idx], labels=[0, 1])
     print("{}fake_loss".format(prefix), fake_loss)
     print("{}real_loss".format(prefix), real_loss)
 
-    wandb.log({"val_fake_loss": fake_loss, "val_real_loss": real_loss, "val_loss": (fake_loss + real_loss) / 2, "val_accuracy": valid_accuracy})
+    if local_rank == 0:
+        wandb.log({"val_fake_loss": fake_loss, "val_real_loss": real_loss, "val_loss": (fake_loss + real_loss) / 2, "val_accuracy": valid_accuracy})
+        vessl.log(step=epoch, payload={"val_fake_loss": fake_loss, "val_real_loss": real_loss, "val_loss": (fake_loss + real_loss) / 2, "val_accuracy": valid_accuracy})
 
     return (fake_loss + real_loss) / 2, probs, targets
 
@@ -355,7 +361,9 @@ def train_epoch(current_epoch, loss_functions, model, optimizer, scheduler, trai
 
         optimizer.zero_grad()
         pbar.set_postfix({"lr": float(scheduler.get_lr()[-1]), "epoch": current_epoch, "loss": losses.avg, "fake_loss": fake_losses.avg, "real_loss": real_losses.avg})
-        wandb.log({"fake_loss": fake_loss, "real_loss": real_loss, "loss": (fake_loss + real_loss) / 2})
+
+        if local_rank == 0:
+            wandb.log({"fake_loss": fake_loss, "real_loss": real_loss, "loss": (fake_loss + real_loss) / 2})
 
         if conf["fp16"]:
             with amp.scale_loss(loss, optimizer) as scaled_loss:
@@ -375,6 +383,8 @@ def train_epoch(current_epoch, loss_functions, model, optimizer, scheduler, trai
             lr = param_group["lr"]
             summary_writer.add_scalar("group{}/lr".format(idx), float(lr), global_step=current_epoch)
         summary_writer.add_scalar("train/loss", float(losses.avg), global_step=current_epoch)
+        # log per epoch
+        vessl.log(step=current_epoch, payload={"fake_loss": float(fake_losses.avg), "real_loss": float(real_losses.avg), "loss": float(losses.avg)})
 
 
 if __name__ == "__main__":
