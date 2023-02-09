@@ -5,7 +5,7 @@
     "size": 380,
     "fp16": true,
     "optimizer": {
-        "batch_size": 64,
+        "batch_size": 32,
         "type": "SGD",
         "momentum": 0.9,
         "weight_decay": 1e-4,
