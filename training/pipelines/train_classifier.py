@@ -300,9 +300,6 @@ def validate(net, data_loader, prefix=""):
     x = np.array(data_x)
     fake_idx = y > 0.1
     real_idx = y < 0.1
-    import ipdb
-
-    ipdb.set_trace()
     fake_loss = log_loss(y[fake_idx], x[fake_idx], labels=[0, 1])
     real_loss = log_loss(y[real_idx], x[real_idx], labels=[0, 1])
     print("{}fake_loss".format(prefix), fake_loss)
