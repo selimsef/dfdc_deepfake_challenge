@@ -258,12 +258,12 @@ class DeepFakeClassifierDataset(Dataset):
                 image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
                 mask = np.zeros(image.shape[:2], dtype=np.uint8)
                 diff_path = os.path.join(self.data_root, "diffs", video, img_file[:-4] + "_diff.png")
-                try:
+                if os.path.exists(diff_path):
                     msk = cv2.imread(diff_path, cv2.IMREAD_GRAYSCALE)
                     if msk is not None:
                         mask = msk
-                except:
-                    print("not found mask", diff_path)
+                else:
+                    # print("not found mask", diff_path)
                     pass
                 if self.mode == "train" and self.hardcore and not self.rotation:
                     landmark_path = os.path.join(self.data_root, "landmarks", ori_video, img_file[:-4] + ".npy")
