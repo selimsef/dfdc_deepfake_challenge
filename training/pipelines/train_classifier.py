@@ -192,7 +192,7 @@ def main():
     max_epochs = conf["optimizer"]["schedule"]["epochs"]
     # mlops init
     wandb.init(project="dfdc-deepfake-detection", entity="greenteaboom")
-    wandb.config = {"annotate": "vanilla", "epochs": max_epochs, "batch_size": 12}
+    wandb.config = {"annotate": "vanilla-gpu2", "epochs": max_epochs, "batch_size": 12}
     wandb.run.name = "vanilla-run"
     for epoch in range(start_epoch, max_epochs):
         data_train.reset(epoch, args.seed)
