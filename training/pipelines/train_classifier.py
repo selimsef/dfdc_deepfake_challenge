@@ -193,9 +193,9 @@ def main():
     max_epochs = conf["optimizer"]["schedule"]["epochs"]
     # mlops init
     if args.local_rank == 0:
-        wandb.init(project="dfdc-deepfake-detection", entity="greenteaboom")
-        wandb.config = {"annotate": "0210-dfdc-vanilla", "epochs": max_epochs, "batch_size": batch_size}
-        wandb.run.name = "0210-dfdc-vanilla"
+        # wandb.init(project="dfdc-deepfake-detection", entity="greenteaboom")
+        # wandb.config = {"annotate": "0210-dfdc-vanilla", "epochs": max_epochs, "batch_size": batch_size}
+        # wandb.run.name = "0210-dfdc-vanilla"
 
         vessl.init(organization="greentea", project="dfdc-deepfake-detection")
     for epoch in range(start_epoch, max_epochs):
@@ -313,7 +313,7 @@ def validate(net, data_loader, prefix="", epoch=-1, local_rank=-1):
     print("{}real_loss".format(prefix), real_loss)
 
     if local_rank == 0:
-        wandb.log({"val_fake_loss": fake_loss, "val_real_loss": real_loss, "val_loss": (fake_loss + real_loss) / 2, "val_accuracy": valid_accuracy})
+        # wandb.log({"val_fake_loss": fake_loss, "val_real_loss": real_loss, "val_loss": (fake_loss + real_loss) / 2, "val_accuracy": valid_accuracy})
         vessl.log(step=epoch, payload={"val_fake_loss": fake_loss, "val_real_loss": real_loss, "val_loss": (fake_loss + real_loss) / 2, "val_accuracy": valid_accuracy})
 
     return (fake_loss + real_loss) / 2, probs, targets
@@ -362,8 +362,8 @@ def train_epoch(current_epoch, loss_functions, model, optimizer, scheduler, trai
         optimizer.zero_grad()
         pbar.set_postfix({"lr": float(scheduler.get_lr()[-1]), "epoch": current_epoch, "loss": losses.avg, "fake_loss": fake_losses.avg, "real_loss": real_losses.avg})
 
-        if local_rank == 0:
-            wandb.log({"fake_loss": fake_loss, "real_loss": real_loss, "loss": (fake_loss + real_loss) / 2})
+        # if local_rank == 0:
+        #     wandb.log({"fake_loss": fake_loss, "real_loss": real_loss, "loss": (fake_loss + real_loss) / 2})
 
         if conf["fp16"]:
             with amp.scale_loss(loss, optimizer) as scaled_loss:
@@ -384,7 +384,7 @@ def train_epoch(current_epoch, loss_functions, model, optimizer, scheduler, trai
             summary_writer.add_scalar("group{}/lr".format(idx), float(lr), global_step=current_epoch)
         summary_writer.add_scalar("train/loss", float(losses.avg), global_step=current_epoch)
         # log per epoch
-        vessl.log(step=current_epoch, payload={"fake_loss": float(fake_losses.avg), "real_loss": float(real_losses.avg), "loss": float(losses.avg)})
+        # vessl.log(step=current_epoch, payload={"fake_loss": float(fake_losses.avg), "real_loss": float(real_losses.avg), "loss": float(losses.avg)})
 
 
 if __name__ == "__main__":
