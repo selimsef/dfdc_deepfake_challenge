@@ -250,14 +250,14 @@ class DeepFakeClassifierDataset(Dataset):
 
         while True:
             video, img_file, label, ori_video, frame, fold = self.data[index]
+            import ipdb
+
+            ipdb.set_trace()
             try:
                 if self.mode == "train":
                     label = np.clip(label, self.label_smoothing, 1 - self.label_smoothing)
                 img_path = os.path.join(self.data_root, self.crops_dir, video, img_file)
                 image = cv2.imread(img_path, cv2.IMREAD_COLOR)
-                import ipdb
-
-                ipdb.set_trace()
                 image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
                 mask = np.zeros(image.shape[:2], dtype=np.uint8)
                 diff_path = os.path.join(self.data_root, "diffs", video, img_file[:-4] + "_diff.png")
