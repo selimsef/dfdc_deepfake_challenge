@@ -250,9 +250,6 @@ class DeepFakeClassifierDataset(Dataset):
 
         while True:
             video, img_file, label, ori_video, frame, fold = self.data[index]
-            import ipdb
-
-            ipdb.set_trace()
             try:
                 if self.mode == "train":
                     label = np.clip(label, self.label_smoothing, 1 - self.label_smoothing)

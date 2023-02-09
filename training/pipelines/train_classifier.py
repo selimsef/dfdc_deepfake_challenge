@@ -324,6 +324,9 @@ def train_epoch(current_epoch, loss_functions, model, optimizer, scheduler, trai
     if conf["optimizer"]["schedule"]["mode"] == "epoch":
         scheduler.step(current_epoch)
     for i, sample in pbar:
+        import ipdb
+
+        ipdb.set_trace()
         imgs = sample["image"].cuda()
         labels = sample["labels"].cuda().float()
         out_labels = model(imgs)
