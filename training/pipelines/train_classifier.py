@@ -384,7 +384,7 @@ def train_epoch(current_epoch, loss_functions, model, optimizer, scheduler, trai
             summary_writer.add_scalar("group{}/lr".format(idx), float(lr), global_step=current_epoch)
         summary_writer.add_scalar("train/loss", float(losses.avg), global_step=current_epoch)
         # log per epoch
-        # vessl.log(step=current_epoch, payload={"fake_loss": float(fake_losses.avg), "real_loss": float(real_losses.avg), "loss": float(losses.avg)})
+        vessl.log(step=current_epoch, payload={"fake_loss": float(fake_losses.avg), "real_loss": float(real_losses.avg), "loss": float(losses.avg)})
 
 
 if __name__ == "__main__":
