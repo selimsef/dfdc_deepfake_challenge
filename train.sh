@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ROOT_DIR='/home/coinse/greentea/src/dfdc_deepfake_challenge/data_root'
+ROOT_DIR='/input/dfdc/'
 NUM_GPUS='2'
 # OPT=$1
 # BATCH_SIZE=$2
