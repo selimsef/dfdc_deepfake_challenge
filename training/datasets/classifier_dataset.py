@@ -354,8 +354,8 @@ class DeepFakeClassifierDataset(Dataset):
         else:
             rows = df[df["fold"] == self.fold]
         seed = (epoch + 1) * seed
-        if self.oversample_real:
-            rows = self._oversample(rows, seed)
+        # if self.oversample_real:
+        #     rows = self._oversample(rows, seed)
         if self.mode == "val" and self.reduce_val:
             # every 2nd frame, to speed up validation
             rows = rows[rows["frame"] % 20 == 0]
