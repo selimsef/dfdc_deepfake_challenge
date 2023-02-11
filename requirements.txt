@@ -1,0 +1,7 @@
+albumentations
+facenet-pytorch
+numpy
+pandas
+timm
+torch
+torchvision
