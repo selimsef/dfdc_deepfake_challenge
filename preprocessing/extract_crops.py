@@ -79,6 +79,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     os.makedirs(os.path.join(args.root_dir, args.crops_dir), exist_ok=True)
     params = get_video_paths(args.root_dir)
+    print(params)
     with Pool(processes=cpu_count()) as p:
         with tqdm(total=len(params)) as pbar:
             for v in p.imap_unordered(partial(extract_video, root_dir=args.root_dir, crops_dir=args.crops_dir), params):
