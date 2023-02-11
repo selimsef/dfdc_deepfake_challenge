@@ -56,7 +56,6 @@ def extract_video(param, root_dir, crops_dir):
 def get_video_paths(root_dir):
     paths = []
     for json_path in glob(os.path.join(root_dir, "*/small_metadata.json")):
-        print(json_path)
         dir = Path(json_path).parent
         with open(json_path, "r") as f:
             metadata = json.load(f)
